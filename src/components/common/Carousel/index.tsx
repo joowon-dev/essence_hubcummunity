@@ -1,6 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { CarouselArrowType, CarouselOverflowType } from '@src/lib/types/universal';
-import { S } from './style';
+import React, { useEffect, useRef, useState } from "react";
+import {
+  CarouselArrowType,
+  CarouselOverflowType,
+} from "@src/lib/types/universal";
+import { S } from "./style";
 
 interface CarouselProps {
   itemWidth: number;
@@ -83,16 +86,20 @@ export default function Carousel({
           {children}
         </S.CarouselWrapper>
       </S.CarouselViewport>
-      {currentIndex !== children.length - stride && <S.RightArrow onClick={handleNext} />}
+      {currentIndex !== children.length - stride && (
+        <S.RightArrow onClick={handleNext} />
+      )}
       {isDesktop && (
         <S.DotWrapper>
-          {Array.from({ length: Math.ceil(children.length / stride) }).map((dot, index) => (
-            <S.Dot
-              key={index}
-              onClick={() => setCurrentIndex(index * stride)}
-              selected={index === Math.floor(currentIndex / stride)}
-            />
-          ))}
+          {Array.from({ length: Math.ceil(children.length / stride) }).map(
+            (dot, index) => (
+              <S.Dot
+                key={index}
+                onClick={() => setCurrentIndex(index * stride)}
+                selected={index === Math.floor(currentIndex / stride)}
+              />
+            )
+          )}
         </S.DotWrapper>
       )}
     </S.Wrapper>
