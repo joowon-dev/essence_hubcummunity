@@ -1,9 +1,9 @@
-import { keyframes } from '@emotion/react';
+import { keyframes } from "@emotion/react";
 
 export const ArrowDownAnimation = `
 @keyframes ArrowDown {
   from {
-    transform: rotate(-180deg);
+    transform: rotate(-135deg);
   }
   to {
     transform: rotate(0deg);
@@ -11,7 +11,7 @@ export const ArrowDownAnimation = `
 }
 @-moz-keyframes ArrowDown {
   from {
-    transform: rotate(-180deg);
+    transform: rotate(-135deg);
   }
   to {
     transform: rotate(0deg);
@@ -19,7 +19,7 @@ export const ArrowDownAnimation = `
 }
 @-webkit-keyframes ArrowDown {
   from {
-    transform: rotate(-180deg);
+    transform: rotate(-135deg);
   }
   to {
     transform: rotate(0deg);
@@ -27,7 +27,7 @@ export const ArrowDownAnimation = `
 }
 @-o-keyframes ArrowDown {
   from {
-    transform: rotate(-180deg);
+    transform: rotate(-135deg);
   }
   to {
     transform: rotate(0deg);
@@ -40,7 +40,7 @@ export const ArrowUpAnimation = `
     transform: rotate(0deg);
   }
   to {
-    transform: rotate(-180deg);
+    transform: rotate(-135deg);
   }
 }
 @-moz-keyframes ArrowUp {
@@ -48,7 +48,7 @@ export const ArrowUpAnimation = `
     transform: rotate(0deg);
   }
   to {
-    transform: rotate(-180deg);
+    transform: rotate(-135deg);
   }
 }
 @-webkit-keyframes ArrowUp {
@@ -56,7 +56,7 @@ export const ArrowUpAnimation = `
     transform: rotate(0deg);
   }
   to {
-    transform: rotate(-180deg);
+    transform: rotate(-135deg);
   }
 }
 @-o-keyframes ArrowUp {
@@ -64,7 +64,7 @@ export const ArrowUpAnimation = `
     transform: rotate(0deg);
   }
   to {
-    transform: rotate(-180deg);
+    transform: rotate(-135deg);
   }
 }
 `;

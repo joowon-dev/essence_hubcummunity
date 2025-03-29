@@ -1,8 +1,8 @@
-import { useRouter } from 'next/router';
-import { FC } from 'react';
-import { ReactComponent as ArrowRight } from '@src/assets/icons/arrow_right_16x16.svg';
-import Channels from '@src/components/Footer/Channels';
-import * as St from './style';
+import { useRouter } from "next/router";
+import { FC } from "react";
+import ArrowRight from "@src/assets/icons/arrow_right_16x16.svg";
+import Channels from "@src/components/Footer/Channels";
+import * as St from "./style";
 
 const OriginFooter: FC = () => {
   const router = useRouter();

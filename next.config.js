@@ -5,27 +5,44 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
-  webpack: (config) => {
+  webpack(config) {
     config.module.rules.push({
       test: /\.svg$/,
-      use: ['@svgr/webpack', 'url-loader'],
+      issuer: /\.[jt]sx?$/,
+      use: [
+        {
+          loader: "@svgr/webpack",
+          options: {
+            icon: true,
+          },
+        },
+      ],
     });
-
     return config;
   },
   async redirects() {
     return [
       {
-        source: '/review',
-        destination: '/blog',
+        source: "/review",
+        destination: "/blog",
         permanent: false,
       },
       {
-        source: '/sopticle',
-        destination: '/blog',
+        source: "/sopticle",
+        destination: "/blog",
         permanent: false,
       },
     ];
+  },
+  experimental: {
+    turbo: {
+      rules: {
+        "*.svg": {
+          loaders: ["@svgr/webpack"],
+          as: "*.js",
+        },
+      },
+    },
   },
 };
 

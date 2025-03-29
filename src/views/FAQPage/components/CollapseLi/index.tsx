@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import * as S from './style';
+import { useState } from "react";
+import * as S from "./style";
 
 interface CollapseLiProps {
   title: string;

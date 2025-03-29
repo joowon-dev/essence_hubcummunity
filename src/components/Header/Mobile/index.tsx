@@ -1,33 +1,39 @@
-import styled from '@emotion/styled';
-import { colors } from '@sopt-makers/colors';
-import Image from 'next/image';
-import { useRouter } from 'next/router';
-import { useState } from 'react';
-import menuBar from '@src/assets/icons/menuBar.svg';
-import xButton from '@src/assets/icons/xButton.png';
-import { imgLogoHub } from '@src/assets/mainLogo';
-import { Condition } from '@src/components/common/Condition';
-import { MenuState } from '../types';
-import HeaderMenu from './HeaderMenu';
+import styled from "@emotion/styled";
+import { colors } from "@sopt-makers/colors";
+import Image from "next/image";
+import { useState } from "react";
+import MenuBar from "@src/assets/icons/menuBar.svg";
+import xButton from "@src/assets/icons/xButton.png";
+
+import { Condition } from "@src/components/common/Condition";
+import { MenuState } from "../types";
+import HeaderMenu from "./HeaderMenu";
+import RecruitButton from "./RecruitButton";
 
 function MobileHeader() {
-  const router = useRouter();
-  const [isMenuShown, setIsMenuShown] = useState<MenuState>('idle');
+  const [isMenuShown, setIsMenuShown] = useState<MenuState>("idle");
 
   const handleHeaderToggleButton = () => {
-    setIsMenuShown((prev) => (prev === 'open' ? 'close' : 'open'));
+    setIsMenuShown((prev) => (prev === "open" ? "close" : "open"));
   };
 
   return (
     <>
-      <StyledHeader isMenuShown={isMenuShown === 'open'}>
-        <Logo onClick={() => router.push('/')} />
+      <StyledHeader isMenuShown={isMenuShown === "open"}>
         <ToggleButton onClick={handleHeaderToggleButton}>
-          <Image src={isMenuShown === 'open' ? xButton.src : menuBar} alt="메뉴 토글 버튼" fill />
+          {isMenuShown === "open" ? (
+            <Image src={xButton.src} alt="메뉴 토글 버튼" fill />
+          ) : (
+            <MenuBar width="18px" height="14px" />
+          )}
         </ToggleButton>
+        <RecruitButton />
       </StyledHeader>
-      <Condition statement={isMenuShown === 'open'}>
-        <HeaderMenu isMenuShown={isMenuShown} handleHeaderToggleButton={handleHeaderToggleButton} />
+      <Condition statement={isMenuShown === "open"}>
+        <HeaderMenu
+          isMenuShown={isMenuShown}
+          handleHeaderToggleButton={handleHeaderToggleButton}
+        />
       </Condition>
     </>
   );
@@ -36,27 +42,19 @@ function MobileHeader() {
 export const StyledHeader = styled.div<{ isMenuShown: boolean }>`
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
+  justify-content: flex-end;
+  gap: 18px;
   z-index: 10;
-  background-color: ${({ isMenuShown }) => (isMenuShown ? colors.gray950 : 'initial')};
+  background-color: ${({ isMenuShown }) => (isMenuShown ? "#FF5E36" : "")};
   padding: 0 20px;
   height: 100%;
   transition: background-color 0.6s;
 `;
 
-export const Logo = styled.button`
-  width: 63px;
-  height: 21px;
-  background: url(${imgLogoHub.src}) center no-repeat;
-  background-size: 100% 100%;
-  cursor: pointer;
-`;
-
 export const ToggleButton = styled.button`
   position: relative;
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 14px;
   cursor: pointer;
 `;
 

@@ -3,7 +3,7 @@ import * as S from './style';
 
 interface ButtonProps
   extends DetailedHTMLProps<HTMLAttributes<HTMLButtonElement>, HTMLButtonElement> {
-  children: string | ReactElement;
+  children: string | ReactElement<any>;
 }
 
 function RoundButton({ children, ...props }: ButtonProps) {
