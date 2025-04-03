@@ -1,20 +1,21 @@
-import { RULES } from "@src/lib/constants/rules";
+import { SCHEDULE } from "@src/lib/constants/schedule";
 import FaqSection from "../FaqSection";
 import * as S from "./style";
 
 function RulesList() {
   return (
     <S.Ul>
-      {RULES.map((item) => {
+      {SCHEDULE.map((item) => {
         return (
           <FaqSection
             key={item.title}
-            tag={item.tag}
             title={item.title}
-            contents={item.contents}
+            endTime={item.endTime}
+            day={item.day}
           />
         );
       })}
+      ;
     </S.Ul>
   );
 }

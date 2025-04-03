@@ -66,16 +66,7 @@ export const Button = styled.button<ButtonStyleProps>`
 
 export const Contents = styled.div<ButtonStyleProps>`
   overflow: hidden;
-  line-height: 180%;
-  letter-spacing: -0.03em;
-  white-space: pre-line;
-  color: black;
-  font-size: 20rem;
-  font-weight: 400;
-  font-style: normal;
-  @media (max-width: 48rem) {
-    font-size: 14rem;
-  }
+  
 
   ${({ isOpened }) =>
     isOpened
@@ -90,4 +81,55 @@ export const Contents = styled.div<ButtonStyleProps>`
           transition: max-height 0.15s ease-out;
           max-height: 0;
         `}
+`;
+export const Essence = styled.div`
+  width: 80vw;
+  margin-top: 20px;
+  @media (max-width: 48rem) {
+  }
+`;
+
+export const Tag = styled.span`
+  color: #000000;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.56px;
+`;
+
+export const EssenceTitle = styled.h3`
+  color: #000000;
+  font-family: "Wanted Sans", sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.56px;
+  line-height: normal;
+  white-space: nowrap;
+  margin-top: 4px;
+  margin-bottom: 7px;
+`;
+
+export const EssenceContents = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: -0.56px;
+  font-size: 12px;
+  font-weight: 600;
+  font-style: normal;
+`;
+
+export const Speaker = styled.span`
+  color: black;
+`;
+
+export const Group = styled.span`
+  color: #666666;
+`;
+
+export const FirstWord = styled.span`
+  color: #000000;
+`;
+
+export const SecondWord = styled.span`
+  color: #ED2725;
 `;

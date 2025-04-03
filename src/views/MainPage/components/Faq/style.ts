@@ -8,7 +8,7 @@ export const Container = styled.section`
   display: flex;
   flex-direction: column;
   height: auto;
-  min-height: 66vh; /* 기본 높이는 유지하되, 더 늘어날 수 있음 */
+  min-height: calc( 350 / 360 * 100vw); /* 기본 높이는 유지하되, 더 늘어날 수 있음 */
   transition: height 0.3s ease;
   align-items: center;
   background-color: #f5f5f5;
@@ -18,6 +18,7 @@ export const Content = styled.main`
   display: flex;
   align-items: center;
   flex-direction: column;
+  margin-bottom: 48px;
 `;
 
 export const ContentWrapper = styled.article`

@@ -23,6 +23,14 @@ export default function Document() {
 
           @font-face {
             font-family: 'Wanted Sans';
+            src: url('https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.0/packages/wanted-sans/webfonts/static/woff2/WantedSans-SemiBold.woff2') format('woff2');
+            font-weight: 600;
+            font-style: normal;
+            font-display: swap;
+          }
+
+          @font-face {
+            font-family: 'Wanted Sans';
             src: url('https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.0/packages/wanted-sans/webfonts/static/woff2/WantedSans-Bold.woff2') format('woff2');
             font-weight: 700;
             font-style: normal;

@@ -22,7 +22,7 @@ interface RootProps {
 
 export const Root = styled.div<RootProps>`
   position: fixed;
-  top: 48px;
+  top: 60px;
   right: 0;
 
   z-index: 9;
@@ -65,7 +65,7 @@ export const MenuWrap = styled.div`
 
 export const Background = styled.div`
   height: 100vh;
-  background: ${colors.gray950};
+  background: #ffffff;
   opacity: 0.8;
 `;
 
@@ -112,12 +112,12 @@ export const ContentsWrap = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background: ${colors.gray950};
+  background: #ffffff;
 
   padding-top: 50px;
   margin-bottom: 0px;
 
-  height: 364px;
+  height: 108px;
 `;
 
 export const MenuTitlesWrap = styled.div`
@@ -141,7 +141,7 @@ export const MenuTitle = styled.div<MenuTitleProps>`
   line-height: 32px;
   font-weight: ${({ isSelected }) => (isSelected ? '700' : '500')};
 
-  color: ${({ isSelected }) => (isSelected ? '#fff' : 'rgba(255, 255, 255, 0.5)')};
+  color: ${({ isSelected }) => (isSelected ? '#000000' : 'rgba(255, 255, 255, 0.5)')};
   cursor: pointer;
   width: fit-content;
 
@@ -153,39 +153,8 @@ export const MenuTitle = styled.div<MenuTitleProps>`
     margin-left: 30px;
   }
 
-  ${({ menuColor }) =>
-    menuColor === 'SPECIAL' &&
-    css`
-      padding: 0 20px;
-      border-radius: 5.869px;
-      border: 1.027px solid #4786ff;
-      background: rgba(71, 134, 255, 0.28);
-      color: #267dff;
-    `}
 `;
 
-export const Rules = styled(Link)`
-  cursor: pointer;
-  text-decoration-line: underline;
-  line-height: 20px;
 
-  letter-spacing: -0.04em;
 
-  color: #a9a9a9;
-  font-size: 15rem;
-  font-weight: 800;
-`;
 
-export const ChannelWrap = styled.div`
-  margin-top: 38px;
-`;
-
-export const ChannelTitle = styled.p`
-  margin-bottom: 15px;
-  line-height: 17px;
-  letter-spacing: -0.04em;
-
-  color: ${colors.gray10};
-  font-size: 14rem;
-  font-weight: 600;
-`;

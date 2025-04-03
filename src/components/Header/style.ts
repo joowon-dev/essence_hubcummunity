@@ -11,7 +11,7 @@ export const Wrapper = styled.header<{ opacity: number }>`
   top: 0;
   padding: 0 20px;
 
-  background-color: rgba(245, 245, 245, ${({ opacity }) => opacity});
+  background-color: rgba(255, 255, 255, ${({ opacity }) => opacity});
   backdrop-filter: blur(${({ opacity }) => opacity * 5}px);
   transition: background-color 0.2s ease, backdrop-filter 0.2s ease;
 

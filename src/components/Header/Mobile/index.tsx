@@ -45,7 +45,7 @@ export const StyledHeader = styled.div<{ isMenuShown: boolean }>`
   justify-content: flex-end;
   gap: 18px;
   z-index: 10;
-  background-color: ${({ isMenuShown }) => (isMenuShown ? "#FF5E36" : "")};
+  background-color: ${({ isMenuShown }) => (isMenuShown ? "" : "")};
   padding: 0 20px;
   height: 100%;
   transition: background-color 0.6s;

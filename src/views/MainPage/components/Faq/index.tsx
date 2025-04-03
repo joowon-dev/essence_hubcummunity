@@ -16,7 +16,7 @@ export default function Faq({}: BannerProps) {
         <S.ContentWrapper>
           <S.Content>
             <Label />
-            <RulesList />
+            <RulesList/>
           </S.Content>
         </S.ContentWrapper>
       </S.Container>

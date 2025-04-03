@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import styled from "@emotion/styled";
 import { usePathname } from "next/navigation";
 import { useIsDesktop, useIsMobile, useIsTablet } from "@src/hooks/useDevice";
-import DesktopHeader from "./Desktop";
 import MobileHeader from "./Mobile";
 import { imgLogoHub } from "@src/assets/mainLogo";
 import { useRouter } from "next/router";
@@ -23,8 +22,8 @@ export function Header() {
 
     const handleScroll = () => {
       const scrollY = window.scrollY;
-      const start = window.innerHeight * 0.53; // 변화 시작 시점
-      const end = window.innerHeight * 0.59; // 완전 불투명해질 시점
+      const start = window.innerWidth * (520 / 360)*0.8;
+      const end = window.innerWidth * (520 / 360)-60;
 
       if (scrollY <= start) {
         setOpacity(0);

@@ -1,8 +1,9 @@
 import styled from "@emotion/styled";
 
 export const LabelWrapper = styled.div`
-  width: 156px;
-  height: 74px;
+  width: 300px;
+  height: 111px;
+  margin-bottom: 20px;
 `;
 
 export const LabelText = styled.p`

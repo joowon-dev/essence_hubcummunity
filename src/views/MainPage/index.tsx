@@ -6,7 +6,8 @@ import Banner from "./components/Banner";
 import Main from "./components/Main";
 import Schedule from "./components/Schedule";
 import Faq from "./components/Faq";
-
+import TshirtsBanner from "./components/TshirtsBanner";
+import ContentBanner from "./components/ContentBanner";
 function MainPage() {
   const { data: adminData } = useQuery<GetHomepageResponse>({
     queryKey: ["homepage"],
@@ -14,10 +15,12 @@ function MainPage() {
   });
   return (
     <PageLayout>
-      <Banner mainColor={"#FF5E36"} highColor={"#"} />
+      <Banner  />
       <Main />
       <Schedule />
+      <TshirtsBanner />
       <Faq />
+      <ContentBanner />
     </PageLayout>
   );
 }

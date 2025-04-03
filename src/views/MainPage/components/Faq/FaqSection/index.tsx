@@ -2,12 +2,12 @@ import { useState } from "react";
 import * as S from "./style";
 
 interface FaqSectionProps {
-  // tag: string;
+  tag: string;
   title: string;
   contents: string;
 }
 
-function FaqSection({ title, contents }: FaqSectionProps) {
+function FaqSection({ tag, title, contents }: FaqSectionProps) {
   const [isOpened, setIsOpened] = useState(false);
 
   const handleClick = () => {
@@ -16,9 +16,9 @@ function FaqSection({ title, contents }: FaqSectionProps) {
 
   return (
     <S.Root>
+       <S.Tag>{tag}</S.Tag>
       <S.Section onClick={handleClick}>
-        {/* <S.Tag>{tag}</S.Tag> */}
-        <S.TItle>{title}</S.TItle>
+        <S.Title>{title}</S.Title>
         <S.Button isOpened={isOpened} />
       </S.Section>
       <S.Contents isOpened={isOpened}>{contents}</S.Contents>

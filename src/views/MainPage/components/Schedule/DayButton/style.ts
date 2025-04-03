@@ -32,4 +32,5 @@ export const Text = styled.div`
   font-weight: 700;
   font-size: 14px;
   font-family: "Wanted Sans", sans-serif;
+  letter-spacing: -0.56px;
 `;

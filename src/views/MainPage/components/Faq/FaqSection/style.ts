@@ -13,8 +13,10 @@ interface ButtonStyleProps {
 export const Root = styled.div`
   border-bottom: 1px solid #000000;
   width: 80vw;
+  padding-bottom: 14px;
+  padding-top: 14px;
   @media (max-width: 48rem) {
-    padding-bottom: 20px;
+    
   }
 `;
 export const Section = styled.div`
@@ -23,15 +25,21 @@ export const Section = styled.div`
   align-items: center;
   cursor: pointer;
   width: 100%;
+  padding-top: 6px;
   @media (max-width: 48rem) {
-    padding-top: 20px;
   }
 `;
+export const Tag = styled.span`
+  color: #838383;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.56px;
+`;
 
-export const TItle = styled.h3`
+export const Title = styled.h3`
   color: #000000;
   font-family: "Wanted Sans", sans-serif;
-  font-size: 28px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.56px;
   line-height: normal;
@@ -66,16 +74,14 @@ export const Button = styled.button<ButtonStyleProps>`
 
 export const Contents = styled.div<ButtonStyleProps>`
   overflow: hidden;
-  line-height: 180%;
-  letter-spacing: -0.03em;
+
   white-space: pre-line;
   color: black;
-  font-size: 20rem;
+  font-size: 14px;
   font-weight: 400;
-  font-style: normal;
-  @media (max-width: 48rem) {
-    font-size: 14rem;
-  }
+  letter-spacing: -0.56px;
+  line-height: 21px;
+
 
   ${({ isOpened }) =>
     isOpened

@@ -1,10 +1,10 @@
 import * as S from "./style";
-import { Box } from "./TopTitle";
+
 import { Label } from "./Label";
-import RulesList from "./FaqList";
+
 import  BottomContent  from "./BottomContent";
 interface BannerProps {}
-export default function Schedule({}: BannerProps) {
+export default function ContentBanner({}: BannerProps) {
   const onScrollMoveDown = () => {
     const element = document.getElementById("nextContainer");
     if (element) element.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -15,9 +15,22 @@ export default function Schedule({}: BannerProps) {
       <S.Container>
         <S.ContentWrapper>
           <S.Content>
-            <Box />
             <Label />
-            <RulesList />
+            <S.ButtonContainer1>
+        <S.Button>
+          <S.ButtonText>
+          홍보영상 보러가기 →
+          </S.ButtonText>
+        </S.Button>
+      </S.ButtonContainer1>
+      <S.ButtonContainer>
+        <S.Button>
+          <S.ButtonText>
+          허브업 콘텐츠 보러가기 →
+          </S.ButtonText>
+        </S.Button>
+      </S.ButtonContainer>
+
             <BottomContent />
           </S.Content>
         </S.ContentWrapper>
