@@ -14,7 +14,7 @@ export const Root = styled.div`
   border-bottom: 1px solid #000000;
   width: 80vw;
   @media (max-width: 48rem) {
-    padding-bottom: 20px;
+    padding-bottom: 10px;
   }
 `;
 export const Section = styled.div`
@@ -30,7 +30,6 @@ export const Section = styled.div`
 
 export const TItle = styled.h3`
   color: #000000;
-  font-family: "Wanted Sans", sans-serif;
   font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.56px;
@@ -85,32 +84,26 @@ export const Contents = styled.div<ButtonStyleProps>`
 
 export const Essence = styled.div`
   width: 80vw;
-  margin-top: 20px;
-  padding-bottom: 20px;
+  margin-top: 15px;
+  padding-bottom: 15px;
   border-bottom: 1px solid #D7D7D7;
   @media (max-width: 48rem) {
   }
 `;
 
-export const EssenceLast = styled.div`
-  width: 80vw;
-  margin-top: 20px;
-
-  @media (max-width: 48rem) {
-  }
+export const EssenceLast = styled(Essence)`
+  border-bottom: none;
 `;
-
 
 export const Tag = styled.span`
   color: #000000;
   font-size: 16px;
   font-weight: 700;
-  letter-spacing: -0.56px;
+  letter-spacing: -0.32px;
 `;
 
 export const EssenceTitle = styled.h3`
   color: #000000;
-  font-family: "Wanted Sans", sans-serif;
   font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.56px;
@@ -123,19 +116,19 @@ export const EssenceTitle = styled.h3`
 export const EssenceContents = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
-  letter-spacing: -0.56px;
+  gap: 4px;
+  letter-spacing: -0.24px;
   font-size: 12px;
   font-weight: 600;
   font-style: normal;
 `;
 
 export const Speaker = styled.span`
-  color: black;
+  color: #000000;
 `;
 
 export const Group = styled.span`
-  color: #666666;
+  color: #A1A1A1;
 `;
 
 export const FirstWord = styled.span`

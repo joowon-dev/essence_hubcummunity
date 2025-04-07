@@ -4,11 +4,11 @@ export const menuTapList: MenuTapList = [
   {
     type: MenuTapType.DEFAULT,
     title: '내 정보',
-    href: '/',
+    href: '/myinfo',
   },
   {
     type: MenuTapType.DEFAULT,
-    title: '티셔츠 에약',
-    href: '/FAQ',
+    title: '티셔츠 예약',
+    href: '/tshirt',
   },
 ];

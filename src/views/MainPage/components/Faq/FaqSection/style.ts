@@ -33,15 +33,16 @@ export const Tag = styled.span`
   color: #838383;
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: -0.56px;
+  font-family: var(--font-wanted);
+  letter-spacing: -0.24px;
 `;
 
 export const Title = styled.h3`
   color: #000000;
-  font-family: "Wanted Sans", sans-serif;
+  font-family: var(--font-wanted);
   font-size: 18px;
   font-weight: 700;
-  letter-spacing: -0.56px;
+  letter-spacing: -0.36px;
   line-height: normal;
   white-space: nowrap;
 `;
@@ -78,8 +79,8 @@ export const Contents = styled.div<ButtonStyleProps>`
   white-space: pre-line;
   color: black;
   font-size: 14px;
-  font-weight: 400;
-  letter-spacing: -0.56px;
+  font-weight: 500;
+  letter-spacing: -0.28px;
   line-height: 21px;
 
 

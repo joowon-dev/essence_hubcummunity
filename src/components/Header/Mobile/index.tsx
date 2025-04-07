@@ -1,9 +1,8 @@
 import styled from "@emotion/styled";
 import { colors } from "@sopt-makers/colors";
-import Image from "next/image";
 import { useState } from "react";
 import MenuBar from "@src/assets/icons/menuBar.svg";
-import xButton from "@src/assets/icons/xButton.png";
+import XButton from "@src/assets/icons/x_button.svg";
 
 import { Condition } from "@src/components/common/Condition";
 import { MenuState } from "../types";
@@ -22,7 +21,7 @@ function MobileHeader() {
       <StyledHeader isMenuShown={isMenuShown === "open"}>
         <ToggleButton onClick={handleHeaderToggleButton}>
           {isMenuShown === "open" ? (
-            <Image src={xButton.src} alt="메뉴 토글 버튼" fill />
+            <XButton width="30px" height="30px" />
           ) : (
             <MenuBar width="18px" height="14px" />
           )}
@@ -56,6 +55,10 @@ export const ToggleButton = styled.button`
   width: 18px;
   height: 14px;
   cursor: pointer;
+  align-items: center;
+  display: flex;
+
+  justify-content: center;
 `;
 
 export default MobileHeader;

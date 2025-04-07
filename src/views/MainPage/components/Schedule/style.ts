@@ -8,16 +8,18 @@ export const Container = styled.section`
   display: flex;
   flex-direction: column;
   height: auto;
-  min-height: 66vh; /* 기본 높이는 유지하되, 더 늘어날 수 있음 */
+  min-height: 66vh;
   transition: height 0.3s ease;
   align-items: center;
   background-color: #000000;
+  font-family: var(--font-wanted);
 `;
 
 export const Content = styled.main`
   display: flex;
   align-items: center;
   flex-direction: column;
+  font-family: var(--font-wanted);
 `;
 
 export const ContentWrapper = styled.article`
@@ -29,11 +31,19 @@ export const ContentWrapper = styled.article`
   z-index: 2;
   padding-bottom: 5px;
   padding-top: 50px;
-  // justify-content: center;
+  font-family: var(--font-wanted);
 
   @media (max-width: 90rem) {
   }
 
   @media (max-width: 48rem) {
   }
+`;
+
+export const DayButtonContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 24px 0;
+  font-family: var(--font-wanted);
 `;

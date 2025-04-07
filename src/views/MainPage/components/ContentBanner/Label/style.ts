@@ -8,7 +8,6 @@ export const LabelWrapper = styled.div`
 
 export const LabelText = styled.p`
   color: #ffffff;
-  font-family: "Wanted Sans", sans-serif;
   font-size: 28px;
   font-weight: 700;
   line-height: 37px;

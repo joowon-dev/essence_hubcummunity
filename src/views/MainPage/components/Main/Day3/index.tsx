@@ -1,21 +1,59 @@
-import { useState } from "react";
-import * as S from "./style";
+import React, { useState } from "react";
+import {
+  Root,
+  Section,
+  TItle,
+  Button,
+  Contents,
+  Essence,
+  EssenceLast,
+  Tag,
+  EssenceTitle,
+  EssenceContents,
+  Speaker,
+  Group,
+  FirstWord,
+  SecondWord,
+} from "./style";
 
 function CollapseLi() {
   const [isOpened, setIsOpened] = useState(false);
 
   const handleClick = () => {
-    setIsOpened((prev) => !prev);
+    setIsOpened(!isOpened);
   };
 
   return (
-    <S.Root>
-      <S.Section onClick={handleClick}>
-        <S.TItle>Day 3</S.TItle>
-        <S.Button isOpened={isOpened} />
-      </S.Section>
-      <S.Contents isOpened={isOpened}>ESSENCE</S.Contents>
-    </S.Root>
+    <Root>
+      <Section onClick={handleClick}>
+        <TItle>Day 3</TItle>
+        <Button isOpened={isOpened} />
+      </Section>
+      <Contents isOpened={isOpened}>
+        <Essence>
+          <Tag>Essence 6</Tag>
+          <EssenceTitle>
+            <FirstWord>Sola </FirstWord>
+            <SecondWord>Gratia</SecondWord>
+          </EssenceTitle>
+          <EssenceContents>
+            <Speaker>최종현 목사</Speaker>
+          </EssenceContents>
+        </Essence>
+
+        <EssenceLast>
+          <Tag>Essence 7</Tag>
+          <EssenceTitle>
+            <FirstWord>Soli </FirstWord>
+            <SecondWord>Deo Gloria</SecondWord>
+          </EssenceTitle>
+          <EssenceContents>
+            <Speaker>최대흥 목사</Speaker>
+            <Group>요셉 청년부</Group>
+          </EssenceContents>
+        </EssenceLast>
+      </Contents>
+    </Root>
   );
 }
 

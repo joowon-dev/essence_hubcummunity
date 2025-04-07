@@ -1,7 +1,4 @@
 import styled from "@emotion/styled";
-import { colors } from "@sopt-makers/colors";
-import Image from "next/image";
-import IcDownScroll from "@src/assets/icons/ic_downScroll.svg";
 
 export const Container = styled.section`
   position: relative;

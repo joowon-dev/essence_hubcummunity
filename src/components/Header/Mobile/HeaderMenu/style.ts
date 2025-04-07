@@ -26,7 +26,7 @@ export const Root = styled.div<RootProps>`
   right: 0;
 
   z-index: 9;
-  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.5);
+  box-shadow: 0px 5px 0px rgba(0, 0, 0, 0.5);
 
   width: 100%;
   height: 100vh;
@@ -114,7 +114,7 @@ export const ContentsWrap = styled.div`
   justify-content: space-between;
   background: #ffffff;
 
-  padding-top: 50px;
+  padding-top: 10px;
   margin-bottom: 0px;
 
   height: 108px;
@@ -123,7 +123,7 @@ export const ContentsWrap = styled.div`
 export const MenuTitlesWrap = styled.div`
   display: grid;
   grid-template-columns: repeat(1);
-  row-gap: 20px;
+  row-gap: 12px;
 
   padding-bottom: 30px;
 `;
@@ -136,12 +136,13 @@ export const MenuTitleAnchor = styled(Link)`
 `;
 
 export const MenuTitle = styled.div<MenuTitleProps>`
-  font-size: 16rem;
-  font-weight: 500;
-  line-height: 32px;
-  font-weight: ${({ isSelected }) => (isSelected ? '700' : '500')};
+  font-size: 18px;
+  line-height: 37px;
+  font-family: var(--font-wanted);
 
-  color: ${({ isSelected }) => (isSelected ? '#000000' : 'rgba(255, 255, 255, 0.5)')};
+  font-weight: ${({ isSelected }) => (isSelected ? '700' : '700')};
+
+  color: ${({ isSelected }) => (isSelected ? '#ED2725' : '#000000')};
   cursor: pointer;
   width: fit-content;
 

@@ -49,7 +49,6 @@ export const ButtonContainer = styled.section`
   background-repeat: no-repeat;
   background-size: contain;
   position: relative;
-
 `;
 
 export const ButtonContainer1 = styled.section`
@@ -71,12 +70,20 @@ export const Button = styled.button`
   height: 100%;
   border: none;
   cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
 `;
 
 export const ButtonText = styled.span`
-  color: white;
- color: #000000;
-  font-family: "Wanted Sans", sans-serif;
+  color: #000000;
   font-size: 18px;
   font-weight: 800;
   letter-spacing: -0.56px;

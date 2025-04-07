@@ -12,7 +12,7 @@ export default function Faq({}: BannerProps) {
 
   return (
     <>
-      <S.Container>
+      <S.Container id="faq-section">
         <S.ContentWrapper>
           <S.Content>
             <Label />

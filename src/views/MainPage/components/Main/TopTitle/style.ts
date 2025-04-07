@@ -11,56 +11,49 @@ export const BoxWrapper = styled.div`
 export const Group = styled.div`
   width: 211px;
   height: 37px;
-`;
-
-export const Text = styled.div`
-  position: absolute;
-  left: 141px;
-  font-family: "Wanted Sans", sans-serif;
-  line-height: 37px;
-  font-size: 17px;
-  font-weight: 600;
-  color: #000000;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
 `;
 
 export const DateWrapper = styled.div`
-  position: absolute;
-  top: 0;
-  left: 20px;
-  width: 100px;
-  height: 37px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 `;
 
 export const DateText = styled.div`
-  position: absolute;
-  line-height: 37px;
   font-size: 17px;
   font-weight: 600;
-  font-family: "Wanted Sans", sans-serif;
   color: #000000;
   white-space: nowrap;
+  line-height: 37px;
 `;
 
 export const Date = styled(DateIcon)`
-  height: 16px;
-  position: absolute;
-  top: 8px;
   width: 16px;
-`;
-
-export const Location = styled(LocationIcon)`
   height: 16px;
-  position: absolute;
-  left: 123px;
-  top: 8px;
-  width: 16px;
+  flex-shrink: 0;
 `;
 
 export const GroupWrapper = styled.div`
-  position: absolute;
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  margin-left: 4px;
+`;
+
+export const Location = styled(LocationIcon)`
   width: 16px;
   height: 16px;
-  background-image: url("/vector.svg");
-  background-size: 100% 100%;
+  flex-shrink: 0;
+`;
+
+export const Text = styled.div`
+  font-size: 17px;
+  font-weight: 600;
+  color: #000000;
+  white-space: nowrap;
+  line-height: 37px;
 `;

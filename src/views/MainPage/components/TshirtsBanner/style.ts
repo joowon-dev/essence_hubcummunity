@@ -1,4 +1,5 @@
 import styled from "@emotion/styled";
+import { keyframes } from "@emotion/react";
 
 export const Container = styled.section`
   width: 100%;
@@ -37,15 +38,65 @@ export const Button = styled.button`
   background-color: #000000;
   border: none;
   cursor: pointer;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: #1a1a1a;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
 `;
 
 export const ButtonText = styled.span`
-  color: white;
- color: #FFFFFF;
-  font-family: "Wanted Sans", sans-serif;
+  color: #FFFFFF;
+  font-family: var(--font-wanted);
   font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -0.56px;
+  font-weight: 700;
+  letter-spacing: -0.36px;
   line-height: 37px;
+`;
+
+// 로딩 애니메이션 정의
+const spin = keyframes`
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+`;
+
+export const LoadingOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+export const LoadingSpinner = styled.div`
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #ffffff;
+  animation: ${spin} 1s ease-in-out infinite;
+  margin-bottom: 16px;
+`;
+
+export const LoadingText = styled.p`
+  color: white;
+  font-family: var(--font-wanted);
+  font-size: 16px;
+  font-weight: 500;
 `;
 

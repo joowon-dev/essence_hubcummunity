@@ -10,6 +10,14 @@ export default function ContentBanner({}: BannerProps) {
     if (element) element.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const openYouTube = () => {
+    window.open("https://www.youtube.com/@hub_worship/videos", "_blank");
+  };
+
+  const openInstagram = () => {
+    window.open("https://www.instagram.com/hub_worship/", "_blank");
+  };
+
   return (
     <>
       <S.Container>
@@ -17,19 +25,19 @@ export default function ContentBanner({}: BannerProps) {
           <S.Content>
             <Label />
             <S.ButtonContainer1>
-        <S.Button>
-          <S.ButtonText>
-          홍보영상 보러가기 →
-          </S.ButtonText>
-        </S.Button>
-      </S.ButtonContainer1>
-      <S.ButtonContainer>
-        <S.Button>
-          <S.ButtonText>
-          허브업 콘텐츠 보러가기 →
-          </S.ButtonText>
-        </S.Button>
-      </S.ButtonContainer>
+              <S.Button onClick={openYouTube}>
+                <S.ButtonText>
+                홍보영상 보러가기 →
+                </S.ButtonText>
+              </S.Button>
+            </S.ButtonContainer1>
+            <S.ButtonContainer>
+              <S.Button onClick={openInstagram}>
+                <S.ButtonText>
+                허브업 콘텐츠 보러가기 →
+                </S.ButtonText>
+              </S.Button>
+            </S.ButtonContainer>
 
             <BottomContent />
           </S.Content>

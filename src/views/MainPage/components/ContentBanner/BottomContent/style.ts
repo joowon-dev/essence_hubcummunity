@@ -31,7 +31,6 @@ export const InfoIcon = styled.svg`
 
 export const InfoText = styled.div`
   color: #FFFFFF;
-  font-family: "Wanted Sans", sans-serif;
   font-size: 14px;
   font-weight: 600;
   letter-spacing: -0.56px;

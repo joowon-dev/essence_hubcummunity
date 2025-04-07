@@ -16,7 +16,7 @@ export const Group = styled.div`
 export const Text = styled.div`
   position: absolute;
   left: 141px;
-  font-family: "Wanted Sans", sans-serif;
+  font-family: var(--font-wanted);
   line-height: 37px;
   font-size: 17px;
   font-weight: 600;
@@ -37,7 +37,7 @@ export const DateText = styled.div`
   line-height: 37px;
   font-size: 17px;
   font-weight: 600;
-  font-family: "Wanted Sans", sans-serif;
+  font-family: var(--font-wanted);
   color: #000000;
   white-space: nowrap;
 `;

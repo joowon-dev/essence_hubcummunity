@@ -2,8 +2,10 @@ import * as S from "./style";
 import { Box } from "./TopTitle";
 import { Label } from "./Label";
 import RulesList from "./FaqList";
-import  BottomContent  from "./BottomContent";
+import BottomContent from "./BottomContent";
+
 interface BannerProps {}
+
 export default function Schedule({}: BannerProps) {
   const onScrollMoveDown = () => {
     const element = document.getElementById("nextContainer");

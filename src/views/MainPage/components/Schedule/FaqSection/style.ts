@@ -2,10 +2,11 @@ import styled from "@emotion/styled";
 
 export const Root = styled.div<{ isClosed: boolean }>`
   border-bottom: 1px solid
-    ${({ isClosed }) => (isClosed ? "#888888" : "#ffffff")};
+    ${({ isClosed }) => (isClosed ? "#FFFFFF" : "#ffffff")};
   width: 80vw;
   padding-top: 20px;
-  padding-bottom: 20px;
+  padding-bottom: 13px;
+  font-family: var(--font-wanted);
   }
   @media (max-width: 48rem) {
     
@@ -19,15 +20,15 @@ export const Section = styled.div`
   width: 100%;
 
   @media (max-width: 48rem) {
-    padding-top: 20px;
+    padding-top: 13px;
   }
 `;
 
 export const Title = styled.h3<{ isClosed: boolean }>`
   color: ${({ isClosed }) => (isClosed ? "#888888" : "#ffffff")};
-  font-family: "Wanted Sans", sans-serif;
   font-size: 28px;
   font-weight: 700;
+  font-family: var(--font-wanted);
   letter-spacing: -0.56px;
   line-height: normal;
   white-space: nowrap;
@@ -35,17 +36,17 @@ export const Title = styled.h3<{ isClosed: boolean }>`
 
 export const Status = styled.span<{ isClosed: boolean }>`
   color: ${({ isClosed }) => (isClosed ? "#888888" : "#888888")};
-  font-family: "Wanted Sans", sans-serif;
   font-size: 14px;
   font-weight: 500;
+  font-family: var(--font-wanted);
   letter-spacing: -0.56px;
 `;
 
 export const Contents = styled.div<{ isClosed: boolean }>`
   color: ${({ isClosed }) => (isClosed ? "#888888" : "#ffffff")};
-  font-family: "Wanted Sans", sans-serif;
   font-size: 20px;
   font-weight: 400;
+  font-family: var(--font-wanted);
   letter-spacing: -0.56px;
 `;
 export const Icon = styled.svg`
@@ -66,9 +67,9 @@ export const Rectangle = styled.div<{
 `;
 
 export const DateBadge = styled.span<{ isClosed: boolean }>`
-  font-family: "Wanted Sans", sans-serif;
   color: ${({ isClosed }) => (isClosed ? "#000000" : "#ffffff")};
   font-weight: 700;
+  font-family: var(--font-wanted);
   letter-spacing: -0.56px;
   font-size: 16px;
   white-space: nowrap;

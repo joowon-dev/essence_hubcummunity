@@ -14,14 +14,13 @@ export const Box = () => {
   return (
     <BoxWrapper>
       <Group>
-        <Text>소망수양관</Text>
-
         <DateWrapper>
+          <Date />
           <DateText>2025.5.16-18</DateText>
         </DateWrapper>
-        <Date />
         <GroupWrapper>
           <Location />
+          <Text>소망수양관</Text>
         </GroupWrapper>
       </Group>
     </BoxWrapper>

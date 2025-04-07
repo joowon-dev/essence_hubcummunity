@@ -30,7 +30,6 @@ export const Section = styled.div`
 
 export const TItle = styled.h3`
   color: #000000;
-  font-family: "Wanted Sans", sans-serif;
   font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.56px;
@@ -93,12 +92,11 @@ export const Tag = styled.span`
   color: #000000;
   font-size: 16px;
   font-weight: 700;
-  letter-spacing: -0.56px;
+  letter-spacing: -0.32px;
 `;
 
 export const EssenceTitle = styled.h3`
   color: #000000;
-  font-family: "Wanted Sans", sans-serif;
   font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.56px;
@@ -111,19 +109,19 @@ export const EssenceTitle = styled.h3`
 export const EssenceContents = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
-  letter-spacing: -0.56px;
+  gap: 4px;
+  letter-spacing: -0.24px;
   font-size: 12px;
   font-weight: 600;
   font-style: normal;
 `;
 
 export const Speaker = styled.span`
-  color: black;
+  color: #000000;
 `;
 
 export const Group = styled.span`
-  color: #666666;
+  color: #A1A1A1;
 `;
 
 export const FirstWord = styled.span`

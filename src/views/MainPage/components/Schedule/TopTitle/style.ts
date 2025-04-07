@@ -18,10 +18,10 @@ export const Group = styled.div`
 `;
 
 export const Text = styled.div`
-  font-family: "Wanted Sans", sans-serif;
   line-height: 37px;
   font-size: 17px;
   font-weight: 600;
+  font-family: var(--font-wanted);
   color: #ffffff;
   white-space: nowrap;
   text-align: center;
