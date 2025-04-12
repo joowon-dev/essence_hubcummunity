@@ -8,6 +8,8 @@ import Schedule from "./components/Schedule";
 import Faq from "./components/Faq";
 import TshirtsBanner from "./components/TshirtsBanner";
 import ContentBanner from "./components/ContentBanner";
+import ScrollingNotice from "./components/ScrollingNotice";
+
 function MainPage() {
   const { data: adminData } = useQuery<GetHomepageResponse>({
     queryKey: ["homepage"],
@@ -16,6 +18,7 @@ function MainPage() {
   return (
     <PageLayout>
       <Banner  />
+      <ScrollingNotice text="접수자 대상 4/27 주일 이후 티셔츠 무료 증정 룰렛 예정입니다." />
       <Main />
       <Schedule />
       <TshirtsBanner />

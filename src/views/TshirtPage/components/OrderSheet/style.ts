@@ -246,14 +246,32 @@ export const CartItemInfo = styled.div`
   }
 `;
 
+export const TotalPriceSection = styled.div`
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed #ddd;
+`;
+
+export const DiscountNotice = styled.div`
+  font-size: 14px;
+  color: #666;
+  text-align: right;
+  margin-bottom: 8px;
+`;
+
+export const DiscountAmount = styled.div`
+  font-size: 16px;
+  color: #E23D3D;
+  text-align: right;
+  margin-bottom: 8px;
+  font-weight: 600;
+`;
+
 export const TotalPrice = styled.div`
   font-size: 18px;
   font-weight: 700;
   color: #000;
   text-align: right;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px dashed #ddd;
 `;
 
 export const RemoveButton = styled.button`

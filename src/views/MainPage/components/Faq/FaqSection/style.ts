@@ -38,13 +38,15 @@ export const Tag = styled.span`
 `;
 
 export const Title = styled.h3`
-  color: #000000;
-  font-family: var(--font-wanted);
   font-size: 18px;
   font-weight: 700;
+  margin: 0;
+  padding: 0;
+  color: #000;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  white-space: normal;
   letter-spacing: -0.36px;
-  line-height: normal;
-  white-space: nowrap;
 `;
 
 export const Button = styled.button<ButtonStyleProps>`
@@ -75,7 +77,7 @@ export const Button = styled.button<ButtonStyleProps>`
 
 export const Contents = styled.div<ButtonStyleProps>`
   overflow: hidden;
-
+  padding-top: 14px;
   white-space: pre-line;
   color: black;
   font-size: 14px;

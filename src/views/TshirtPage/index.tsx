@@ -8,7 +8,6 @@ import ImageSlider from './components/ImageSlider';
 interface TshirtData {
   id: number;
   name: string;
-  price: number;
   description: string;
   deadline: string;
 }
@@ -18,7 +17,7 @@ interface TshirtOption {
   size: string;
   color: string;
   stock: number;
-  price?: number;
+  price: number;
 }
 
 interface DeadlineInfo {
@@ -26,11 +25,30 @@ interface DeadlineInfo {
   rawDate: string;
 }
 
+interface PriceInfo {
+  basePrice: number;
+  bulkDiscountAmount: number;
+  bulkDiscountMinQuantity: number;
+  specialSizePrice: {
+    size: string;
+    price: number;
+  }[];
+}
+
 export default function TshirtPage() {
   const [tshirt, setTshirt] = useState<TshirtData | null>(null);
   const [options, setOptions] = useState<TshirtOption[]>([]);
   const [isOrderSheetOpen, setIsOrderSheetOpen] = useState(false);
   const [deadlineInfo, setDeadlineInfo] = useState<DeadlineInfo | null>(null);
+
+  const priceInfo: PriceInfo = {
+    basePrice: 10000,
+    bulkDiscountAmount: 1000,
+    bulkDiscountMinQuantity: 2,
+    specialSizePrice: [
+      { size: '3XL', price: 11000 }
+    ]
+  };
 
   // YYYYMMDD 형식의 문자열을 Date 객체로 변환하는 함수
   const parseDateFromString = (dateString: string) => {
@@ -110,9 +128,10 @@ export default function TshirtPage() {
 
         if (optionsError) throw optionsError;
         
+        // 옵션별 가격 설정
         const optionsWithPrice = optionsData.map(option => ({
           ...option,
-          price: tshirtData.price
+          price: option.size === '3XL' ? priceInfo.specialSizePrice[0].price : priceInfo.basePrice
         }));
         
         setOptions(optionsWithPrice);
@@ -133,41 +152,50 @@ export default function TshirtPage() {
   return (
     <PageLayout>
       <S.Container>
-
         <S.Content>
           <ImageSlider />
 
           <S.InfoSection>
             <S.ProductTitle>{tshirt.name}</S.ProductTitle>
             <S.Deadline>{deadlineInfo?.display || tshirt.deadline}</S.Deadline>
-            <S.Price>{tshirt.price.toLocaleString()}원</S.Price>
+            <S.Price>{priceInfo.basePrice.toLocaleString()}원~</S.Price>
+            <S.Notice>
+              ⭐️ 2장 이상 구매시 장당 {priceInfo.bulkDiscountAmount.toLocaleString()}원 할인<br/>
+              ⭐️ 3XL 사이즈는 {priceInfo.specialSizePrice[0].price.toLocaleString()}원
+            </S.Notice>
 
             <S.SizeGuide>
               <S.SizeGuideTitle>사이즈 가이드</S.SizeGuideTitle>
               <S.Table>
                 <thead>
                   <tr>
-                    <th>cm</th>
-                    <th>총장</th>
-                    <th>어깨너비</th>
-                    <th>가슴단면</th>
-                    <th>소매길이</th>
+                    <th></th>
+                    <th>S<br/>(85)</th>
+                    <th>M<br/>(90)</th>
+                    <th>L<br/>(95)</th>
+                    <th>XL<br/>(100)</th>
+                    <th>2XL<br/>(105)</th>
+                    <th>3XL<br/>(110)</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td>S</td>
-                    <td>65</td>
-                    <td>44.5</td>
-                    <td>52.5</td>
+                    <th>가슴단면</th>
+                    <td>47</td>
+                    <td>49</td>
+                    <td>52</td>
+                    <td>54</td>
+                    <td>56</td>
                     <td>59</td>
                   </tr>
                   <tr>
-                    <td>M</td>
-                    <td>66</td>
-                    <td>45.9</td>
-                    <td>55</td>
-                    <td>60</td>
+                    <th>총 길이</th>
+                    <td>62</td>
+                    <td>65</td>
+                    <td>68</td>
+                    <td>71</td>
+                    <td>74</td>
+                    <td>77</td>
                   </tr>
                 </tbody>
               </S.Table>
@@ -182,10 +210,8 @@ export default function TshirtPage() {
         {isOrderSheetOpen && tshirt && (
           <OrderSheet
             tshirtId={tshirt.id}
-            options={options.map(option => ({
-              ...option,
-              price: option.price || tshirt.price
-            }))}
+            options={options}
+            priceInfo={priceInfo}
             onClose={() => setIsOrderSheetOpen(false)}
           />
         )}

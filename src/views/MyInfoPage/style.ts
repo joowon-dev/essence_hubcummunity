@@ -903,4 +903,28 @@ export const CardCounter = styled.div`
   font-size: 14px;
   color: #666;
   margin-bottom: 16px;
+`;
+
+export const PaymentDetail = styled.div`
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed #ddd;
+`;
+
+export const PaymentRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+`;
+
+export const PaymentLabel = styled.span`
+  font-size: 14px;
+  color: #666;
+`;
+
+export const PaymentValue = styled.span`
+  font-size: 14px;
+  color: #000;
+  font-weight: 600;
 `; 

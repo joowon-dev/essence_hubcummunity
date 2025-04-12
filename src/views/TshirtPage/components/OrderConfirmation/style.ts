@@ -278,4 +278,38 @@ export const DepositorInput = styled.input`
   &:focus {
     border-color: #999;
   }
+`;
+
+export const PaymentTitle = styled.h3`
+  font-size: 18px;
+  font-weight: 700;
+  color: #000;
+  margin-bottom: 16px;
+`;
+
+export const PaymentDetail = styled.div`
+  background-color: #f8f8f8;
+  padding: 16px;
+  border-radius: 8px;
+`;
+
+export const PaymentRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+export const PaymentLabel = styled.span`
+  font-size: 14px;
+  color: #666;
+`;
+
+export const PaymentValue = styled.span`
+  font-size: 16px;
+  color: #000;
 `; 

@@ -26,6 +26,7 @@ interface TshirtOrderItem {
   size: string;
   color: string;
   quantity: number;
+  price: number;
 }
 
 interface ScheduleInfo {
@@ -47,9 +48,9 @@ interface OrderConfirmationProps {
 
 // 은행 계좌 정보
 const BANK_ACCOUNT = {
-  bank: '신한은행',
-  account: '123-456-789012',
-  holder: '에센스'
+  bank: '카카오뱅크',
+  account: '3333063840721',
+  holder: '이지선'
 };
 
 export default function MyInfoPage() {
@@ -250,9 +251,28 @@ export default function MyInfoPage() {
     const [depositorName, setDepositorName] = useState<string>(userInfo?.name || '');
     const canCancel = order.status === '입금확인중' || order.status === '미입금';
     
+    // 총 가격 계산 함수
+    const calculateTotalPrice = (items: TshirtOrderItem[]) => {
+      const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+      const baseTotal = items.reduce((sum, item) => {
+        // 3XL은 11,000원, 나머지는 10,000원
+        const itemPrice = item.size === '3XL' ? 11000 : 10000;
+        return sum + (itemPrice * item.quantity);
+      }, 0);
+      
+      // 2장 이상 주문 시 장당 1,000원 할인
+      const discountAmount = totalQuantity >= 2 ? totalQuantity * 1000 : 0;
+      const finalTotal = baseTotal - discountAmount;
+      
+      return {
+        baseTotal,
+        discountAmount,
+        finalTotal
+      };
+    };
+
     useEffect(() => {
       if (userInfo?.name) {
-        // 사용자 이름과 전화번호 뒷자리(있는 경우)를 합쳐서 입금자명 생성
         const phoneLastDigits = userInfo.phone_number ? userInfo.phone_number.slice(-4) : '';
         const initialDepositorName = userInfo.name + (phoneLastDigits ? phoneLastDigits : '');
         setDepositorName(initialDepositorName);
@@ -292,7 +312,7 @@ export default function MyInfoPage() {
                   </S.OrderInfo>
                   {order.total_price && (
                     <S.ItemPrice>
-                      {formatPrice(order.total_price)}
+                      {formatPrice((item.size === '3XL' ? 11000 : 10000) * item.quantity)}
                     </S.ItemPrice>
                   )}
                 </S.OrderItem>
@@ -303,10 +323,32 @@ export default function MyInfoPage() {
           <S.Section>
             <S.ModalSectionTitle>결제 정보</S.ModalSectionTitle>
             <S.PaymentInfo>
-              <S.StaticInfoRow>
-                <S.InfoLabel>총 상품 금액</S.InfoLabel>
-                <S.InfoValue highlight>{order.total_price ? formatPrice(order.total_price) : '가격 정보 없음'}</S.InfoValue>
-              </S.StaticInfoRow>
+              <S.PaymentDetail>
+                <S.PaymentRow>
+                  <S.PaymentLabel>상품 금액</S.PaymentLabel>
+                  <S.PaymentValue>₩{calculateTotalPrice(order.items).baseTotal.toLocaleString()}원</S.PaymentValue>
+                </S.PaymentRow>
+                {calculateTotalPrice(order.items).discountAmount > 0 && (
+                  <>
+                    <S.PaymentRow>
+                      <S.PaymentLabel>할인 금액</S.PaymentLabel>
+                      <S.PaymentValue style={{ color: '#E23D3D' }}>
+                        -₩{calculateTotalPrice(order.items).discountAmount.toLocaleString()}원
+                      </S.PaymentValue>
+                    </S.PaymentRow>
+                    <S.PaymentRow>
+                      <S.PaymentLabel>할인 내용</S.PaymentLabel>
+                      <S.PaymentValue>2장 이상 구매 할인 (장당 1,000원)</S.PaymentValue>
+                    </S.PaymentRow>
+                  </>
+                )}
+                <S.PaymentRow>
+                  <S.PaymentLabel>총 결제금액</S.PaymentLabel>
+                  <S.PaymentValue style={{ fontWeight: 'bold' }}>
+                    ₩{calculateTotalPrice(order.items).finalTotal.toLocaleString()}원
+                  </S.PaymentValue>
+                </S.PaymentRow>
+              </S.PaymentDetail>
             </S.PaymentInfo>
           </S.Section>
           
@@ -453,14 +495,17 @@ export default function MyInfoPage() {
               order_date: order.order_date,
               status: order.status,
               total_price: order.total_price,
-              items: itemsData || []
+              items: itemsData ? itemsData.map(item => ({
+                ...item,
+                price: item.size === '3XL' ? 11000 : 10000
+              })) : []
             };
           }));
           
           // 주문 정렬: 취소된 주문('취소됨' 상태)은 마지막에 표시
           const sortedOrders = [...ordersWithItems].sort((a, b) => {
             // '취소됨' 상태의 주문은 맨 뒤로
-            if (a.status === '취소됨' && b.status !== '취소됨') return -1 * -1; // -1 * -1 = 1 (양수)
+            if (a.status === '취소됨' && b.status !== '취소됨') return 1;
             if (a.status !== '취소됨' && b.status === '취소됨') return -1;
             
             // 그 외의 주문은 최신순(order_id 내림차순)
@@ -657,7 +702,7 @@ export default function MyInfoPage() {
                   </svg>
                 </S.ChangeIcon>
                 <S.ChangeText>
-                  {carChangeInfo.day}까지 변경 가능
+                차량정보 변경하기({carChangeInfo.day}까지)
                 </S.ChangeText>
               </S.ChangeNotice>
             ) : (
@@ -764,7 +809,7 @@ export default function MyInfoPage() {
                       </svg>
                     </S.ChangeIcon>
                     <S.ChangeText>
-                      {tshirtChangeInfo.day}까지 변경 가능
+                    사이즈 변경하기({tshirtChangeInfo.day}까지)
                     </S.ChangeText>
                   </S.ChangeNotice>
                 ) : (

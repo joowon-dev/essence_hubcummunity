@@ -40,7 +40,7 @@ export const MenuButton = styled.button`
 export const Content = styled.main`
   max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 20px 20px;
 `;
 
 export const ImageSection = styled.section`
@@ -95,30 +95,55 @@ export const Price = styled.p`
 export const SizeGuide = styled.div`
   border-top: 4px solid #EBEBEB;
   border-bottom: 4px solid #EBEBEB;
-  padding: 40px 0;
+  padding: 10px 0;
 
-  margin-bottom: 40px;
+  margin-bottom: 10px;
 `;
 
 export const SizeGuideTitle = styled.h4`
   font-size: 18px;
   font-weight: 700;
   margin-bottom: 16px;
+  color: #000;
 `;
 
 export const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
-
+  margin-top: 10px;
+  
   th, td {
-    padding: 12px;
     text-align: center;
-    border: 1px solid #eee;
+    padding: 14px;
+    font-size: 11px;
+    color: #000;
+    border: none;
+    border-bottom: 1px solid #ddd;
+  }
+
+  th:first-child, td:first-child {
+    width: 100px;
+    text-align: left;
+    padding-left: 0;
+  }
+
+  th:not(:first-child), td:not(:first-child) {
+    width: 50px;
+    padding: 8px 4px;
   }
 
   th {
-    background-color: #f8f8f8;
     font-weight: 700;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+  }
+
+  td {
+    font-weight: 500;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: 1px solid #ddd;
   }
 `;
 

@@ -5,7 +5,26 @@ import * as S from './style';
 import { useRouter } from 'next/router';
 import OrderConfirmation from '../OrderConfirmation';
 
+interface TshirtOption {
+  id: number;
+  size: string;
+  color: string;
+  stock: number;
+  price: number;
+}
+
+interface PriceInfo {
+  basePrice: number;
+  bulkDiscountAmount: number;
+  bulkDiscountMinQuantity: number;
+  specialSizePrice: {
+    size: string;
+    price: number;
+  }[];
+}
+
 interface CartItem {
+  id: string;
   size: string;
   color: string;
   quantity: number;
@@ -14,13 +33,8 @@ interface CartItem {
 
 interface OrderSheetProps {
   tshirtId: number;
-  options: {
-    id: number;
-    size: string;
-    color: string;
-    stock: number;
-    price: number;
-  }[];
+  options: TshirtOption[];
+  priceInfo: PriceInfo;
   onClose: () => void;
 }
 
@@ -31,18 +45,18 @@ const REDIRECT_STORAGE_KEY = 'login_redirect';
 // 입금 계좌 정보
 const BANK_ACCOUNT = {
   bank: '신한은행',
-  account: '123-456-789012',
+  account: '3333063840721',
   holder: '에센스'
 };
 
-export default function OrderSheet({ tshirtId, options, onClose }: OrderSheetProps) {
+export default function OrderSheet({ tshirtId, options, priceInfo, onClose }: OrderSheetProps) {
   const router = useRouter();
   const { phoneNumber, isAuthenticated } = useAuthStore();
   const [userName, setUserName] = useState<string>('');
-  const [selectedSize, setSelectedSize] = useState('');
-  const [selectedColor, setSelectedColor] = useState('');
+  const [selectedSize, setSelectedSize] = useState<string>('');
+  const [selectedColor, setSelectedColor] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string>('');
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [hasPendingOrders, setHasPendingOrders] = useState(false);
   const [isCheckingOrders, setIsCheckingOrders] = useState(false);
@@ -91,10 +105,25 @@ export default function OrderSheet({ tshirtId, options, onClose }: OrderSheetPro
 
   // 총 가격 계산 함수
   const calculateTotalPrice = (items: CartItem[]) => {
-    const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    setTotalPrice(total);
-    return total;
+    const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+    const baseTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    // 2장 이상 주문 시 장당 1,000원 할인
+    const discountAmount = totalQuantity >= 2 ? totalQuantity * 1000 : 0;
+    const finalTotal = baseTotal - discountAmount;
+    
+    return {
+      baseTotal,
+      discountAmount,
+      finalTotal
+    };
   };
+
+  // cartItems가 변경될 때마다 totalPrice 업데이트
+  useEffect(() => {
+    const { finalTotal } = calculateTotalPrice(cartItems);
+    setTotalPrice(finalTotal);
+  }, [cartItems]);
 
   // 사용자가 로그인되어 있는 경우 미입금/입금확인중 주문이 있는지 확인
   useEffect(() => {
@@ -122,62 +151,53 @@ export default function OrderSheet({ tshirtId, options, onClose }: OrderSheetPro
     checkPendingOrders();
   }, [isAuthenticated, phoneNumber]);
 
+  const calculateItemPrice = (size: string, quantity: number) => {
+    const basePrice = size === '3XL' ? priceInfo.specialSizePrice[0].price : priceInfo.basePrice;
+    const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0) + quantity;
+    
+    if (totalQuantity >= priceInfo.bulkDiscountMinQuantity) {
+      return basePrice - priceInfo.bulkDiscountAmount;
+    }
+    return basePrice;
+  };
+
   const handleAddToCart = () => {
-    if (!selectedSize || !selectedColor) {
-      setError('사이즈와 색상을 선택해주세요.');
-      return;
-    }
+    if (!selectedSize || !selectedColor || quantity === 0) return;
+    
+    const newItem: CartItem = {
+      id: `${selectedColor}-${selectedSize}`,
+      color: selectedColor,
+      size: selectedSize,
+      quantity: quantity,
+      price: selectedSize === '3XL' ? 11000 : priceInfo.basePrice // 3XL은 11,000원, 나머지는 기본 가격
+    };
 
-    // 선택한 옵션의 가격 찾기
-    const selectedOption = options.find(
-      opt => opt.size === selectedSize && opt.color === selectedColor
-    );
-
-    if (!selectedOption) {
-      setError('선택한 옵션이 유효하지 않습니다.');
-      return;
-    }
-
-    setCartItems(prevItems => {
-      // 같은 사이즈와 색상의 아이템이 있는지 확인
-      const existingItemIndex = prevItems.findIndex(
-        item => item.size === selectedSize && item.color === selectedColor
-      );
-
-      let newItems;
-      if (existingItemIndex >= 0) {
-        // 기존 아이템이 있으면 수량만 추가
-        newItems = [...prevItems];
-        newItems[existingItemIndex] = {
-          ...newItems[existingItemIndex],
-          quantity: newItems[existingItemIndex].quantity + quantity
-        };
-      } else {
-        // 새로운 아이템 추가
-        newItems = [...prevItems, {
-          size: selectedSize,
-          color: selectedColor,
-          quantity: quantity,
-          price: selectedOption.price
-        }];
+    setCartItems(prev => {
+      const existingItem = prev.find(item => item.id === newItem.id);
+      if (existingItem) {
+        return prev.map(item => 
+          item.id === newItem.id 
+            ? { ...item, quantity: item.quantity + newItem.quantity }
+            : item
+        );
       }
-      
-      // 총 가격 다시 계산
-      calculateTotalPrice(newItems);
-      return newItems;
+      return [...prev, newItem];
     });
 
-    setError('');
-    // 선택 초기화
-    setSelectedSize('');
     setSelectedColor('');
-    setQuantity(1);
+    setSelectedSize('');
+    setQuantity(0);
   };
 
   const handleRemoveFromCart = (index: number) => {
-    const newItems = cartItems.filter((_, i) => i !== index);
-    setCartItems(newItems);
-    calculateTotalPrice(newItems);
+    setCartItems(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleQuantityChange = (delta: number) => {
+    const newQuantity = quantity + delta;
+    if (newQuantity >= 1) {
+      setQuantity(newQuantity);
+    }
   };
 
   const saveCartAndRedirect = () => {
@@ -346,14 +366,14 @@ export default function OrderSheet({ tshirtId, options, onClose }: OrderSheetPro
           <S.Label>수량</S.Label>
           <S.QuantityControl>
             <S.QuantityButton
-              onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
+              onClick={() => handleQuantityChange(-1)}
               disabled={hasPendingOrders}
             >
               -
             </S.QuantityButton>
             <S.QuantityDisplay>{quantity}</S.QuantityDisplay>
             <S.QuantityButton
-              onClick={() => setQuantity(prev => prev + 1)}
+              onClick={() => handleQuantityChange(1)}
               disabled={hasPendingOrders}
             >
               +
@@ -384,7 +404,21 @@ export default function OrderSheet({ tshirtId, options, onClose }: OrderSheetPro
                 </S.RemoveButton>
               </S.CartItem>
             ))}
-            <S.TotalPrice>총 결제금액: {formatPrice(totalPrice)}</S.TotalPrice>
+            <S.TotalPriceSection>
+              {getTotalQuantity() >= 2 && (
+                <>
+                  <S.DiscountNotice>
+                    (2장 이상 구매 할인 적용: 장당 1,000원 할인)
+                  </S.DiscountNotice>
+                  <S.DiscountAmount>
+                    할인 금액: -₩{calculateTotalPrice(cartItems).discountAmount.toLocaleString()}원
+                  </S.DiscountAmount>
+                </>
+              )}
+              <S.TotalPrice>
+                총 결제금액: ₩{calculateTotalPrice(cartItems).finalTotal.toLocaleString()}원
+              </S.TotalPrice>
+            </S.TotalPriceSection>
           </S.CartSection>
         )}
 

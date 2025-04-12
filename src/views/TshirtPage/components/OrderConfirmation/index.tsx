@@ -89,6 +89,21 @@ export default function OrderConfirmation({
     }
   };
 
+  const calculateTotalPrice = (items: CartItem[]) => {
+    const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+    const baseTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    // 2장 이상 주문 시 장당 1,000원 할인
+    const discountAmount = totalQuantity >= 2 ? totalQuantity * 1000 : 0;
+    const finalTotal = baseTotal - discountAmount;
+    
+    return {
+      baseTotal,
+      discountAmount,
+      finalTotal
+    };
+  };
+
   return (
     <S.Container>
       <S.Sheet>
@@ -130,12 +145,30 @@ export default function OrderConfirmation({
         
         <S.Section>
           <S.SectionTitle>결제 정보</S.SectionTitle>
-          <S.PaymentInfo>
-            <S.InfoRow>
-              <S.InfoLabel>총 상품 금액</S.InfoLabel>
-              <S.InfoValue highlight>{formatPrice(totalPrice)}</S.InfoValue>
-            </S.InfoRow>
-          </S.PaymentInfo>
+
+            <S.PaymentDetail>
+              <S.PaymentRow>
+                <S.PaymentLabel>상품 금액</S.PaymentLabel>
+                <S.PaymentValue>₩{calculateTotalPrice(cartItems).baseTotal.toLocaleString()}원</S.PaymentValue>
+              </S.PaymentRow>
+              {calculateTotalPrice(cartItems).discountAmount > 0 && (
+                <>
+                  <S.PaymentRow>
+                    <S.PaymentLabel>할인 금액</S.PaymentLabel>
+                    <S.PaymentValue style={{ color: '#E23D3D' }}>
+                      -₩{calculateTotalPrice(cartItems).discountAmount.toLocaleString()}원
+                    </S.PaymentValue>
+                  </S.PaymentRow>
+              
+                </>
+              )}
+              <S.PaymentRow>
+                <S.PaymentLabel>총 결제금액</S.PaymentLabel>
+                <S.PaymentValue style={{ fontWeight: 'bold' }}>
+                  ₩{calculateTotalPrice(cartItems).finalTotal.toLocaleString()}원
+                </S.PaymentValue>
+              </S.PaymentRow>
+            </S.PaymentDetail>
         </S.Section>
         
         <S.Section>
