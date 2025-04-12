@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Root,
   Section,
@@ -16,12 +16,29 @@ import {
   SecondWord,
 } from "./style";
 
-function CollapseLi() {
+interface CollapseLiProps {
+  onToggle?: (isOpen: boolean) => void;
+}
+
+function CollapseLi({ onToggle }: CollapseLiProps) {
   const [isOpened, setIsOpened] = useState(false);
 
   const handleClick = () => {
-    setIsOpened(!isOpened);
+    const newState = !isOpened;
+    setIsOpened(newState);
+    if (onToggle) {
+      onToggle(newState);
+    }
   };
+  
+  // 컴포넌트가 언마운트될 때 닫힘 상태로 알림
+  useEffect(() => {
+    return () => {
+      if (onToggle && isOpened) {
+        onToggle(false);
+      }
+    };
+  }, [onToggle, isOpened]);
 
   return (
     <Root>

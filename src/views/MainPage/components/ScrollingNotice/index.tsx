@@ -14,6 +14,9 @@ const ScrollingNotice: React.FC<ScrollingNoticeProps> = ({ text }) => {
           {text} &nbsp;&nbsp;&nbsp;&nbsp;
           {text} &nbsp;&nbsp;&nbsp;&nbsp;
           {text} &nbsp;&nbsp;&nbsp;&nbsp;
+          {text} &nbsp;&nbsp;&nbsp;&nbsp;
+          {text} &nbsp;&nbsp;&nbsp;&nbsp;
+          {text} &nbsp;&nbsp;&nbsp;&nbsp;
         </ScrollingText>
       </Wrapper>
     </Container>
@@ -28,6 +31,9 @@ const Container = styled.div`
   overflow: hidden;
   padding: 12px 0;
 
+  @media (min-width: 58.75rem) {
+    width: 600px;
+  }
 `;
 
 const Wrapper = styled.div`
@@ -41,7 +47,7 @@ const scrolling = keyframes`
     transform: translateX(0);
   }
   100% {
-    transform: translateX(-33.33%);
+    transform: translateX(-50%);
   }
 `;
 
@@ -51,6 +57,10 @@ const ScrollingText = styled.div`
   font-size: 22px;
   font-weight: 700;
   color: #fff;
-  animation: ${scrolling} 15s linear infinite;
+  animation: ${scrolling} 20s linear infinite;
   padding-left: 100%;
+
+  @media (min-width: 58.75rem) {
+    font-size: 20px;
+  }
 `; 

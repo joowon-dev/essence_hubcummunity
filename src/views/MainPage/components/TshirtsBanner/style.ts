@@ -15,6 +15,12 @@ export const Container = styled.section`
   background-size: contain;
   position: relative;
 
+  @media (min-width: 58.75rem) {
+    height: 228px;
+    width: 100%;
+    max-width: 600px;
+    background-size: cover;
+  }
 `;
 
 
@@ -30,6 +36,11 @@ export const ButtonContainer = styled.section`
   background-size: contain;
   position: relative;
 
+  @media (min-width: 58.75rem) {
+    height: 52px;
+    width: 100%;
+    max-width: 600px;
+  }
 `;
 
 export const Button = styled.button`
@@ -81,6 +92,12 @@ export const LoadingOverlay = styled.div`
   justify-content: center;
   align-items: center;
   z-index: 1000;
+
+  @media (min-width: 58.75rem) {
+    width: 600px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
 `;
 
 export const LoadingSpinner = styled.div`

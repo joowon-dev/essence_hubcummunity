@@ -11,8 +11,28 @@ interface Schedule {
   mainvisible: number;
 }
 
-function RulesList() {
+interface RulesListProps {
+  onAnyFaqToggle?: (isOpen: boolean) => void;
+}
+
+function RulesList({ onAnyFaqToggle }: RulesListProps) {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [openFaqs, setOpenFaqs] = useState<Record<number, boolean>>({});
+  
+  // 열려 있는 FAQ 추적
+  const updateOpenState = (id: number, isOpen: boolean) => {
+    setOpenFaqs(prev => {
+      const newState = { ...prev, [id]: isOpen };
+      
+      // 상위 컴포넌트에 열린 FAQ가 있는지 알림
+      const anyOpen = Object.values(newState).some(state => state);
+      if (onAnyFaqToggle) {
+        onAnyFaqToggle(anyOpen);
+      }
+      
+      return newState;
+    });
+  };
 
   useEffect(() => {
     async function fetchSchedules() {
@@ -49,6 +69,7 @@ function RulesList() {
           title={item.title}
           endTime={item.end_time}
           day={item.day}
+          onToggle={(isOpen) => updateOpenState(item.id, isOpen)}
         />
       ))}
     </S.Ul>

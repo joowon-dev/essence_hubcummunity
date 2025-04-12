@@ -28,7 +28,7 @@ export default function BottomContent() {
             <path d="M6.99986 3.75391C6.5878 3.75391 6.24609 4.08556 6.24609 4.50768C6.24609 4.92979 6.5878 5.26144 6.99986 5.26144C7.41192 5.26144 7.75363 4.91974 7.75363 4.50768C7.75363 4.09561 7.42197 3.75391 6.99986 3.75391Z" fill="white"/>
           </S.InfoIcon>
           <S.InfoText>
-            기한 내 참가 신청을 하지 못하면 어떻게 되나요?
+          접수 확인 문자를 받지 못했어요!
           </S.InfoText>
         </S.InfoItem>
         <S.InfoItem onClick={handleScrollToFaq}>

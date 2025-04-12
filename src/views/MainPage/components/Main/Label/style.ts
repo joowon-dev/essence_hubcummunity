@@ -3,6 +3,11 @@ import styled from "@emotion/styled";
 export const LabelWrapper = styled.div`
   width: 233px;
   height: 111px;
+  
+  @media (min-width: 58.75rem) {
+    width: 100%;
+    max-width: 350px;
+  }
 `;
 
 export const LabelText = styled.p`

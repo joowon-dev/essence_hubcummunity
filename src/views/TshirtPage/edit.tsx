@@ -64,7 +64,12 @@ export default function TshirtEditPage() {
 
   useEffect(() => {
     if (!isAuthenticated || !phoneNumber) {
-      router.push('/login');
+      // 로그인 후 돌아올 경로 저장
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('login_redirect', `/tshirt/edit?order_id=${order_id}`);
+      }
+      // 로그인 페이지로 이동 (push 대신 replace 사용)
+      router.replace('/login');
       return;
     }
 
@@ -171,6 +176,12 @@ export default function TshirtEditPage() {
       return;
     }
 
+    // 3XL 사이즈로 변경 불가능
+    if (selectedSize === '3XL') {
+      setError('3XL 사이즈로 변경할 수 없습니다.');
+      return;
+    }
+
     // 총 수량 제한 확인
     const newTotalQuantity = totalQuantity + quantity;
     if (newTotalQuantity > originalTotalQuantity) {
@@ -214,6 +225,13 @@ export default function TshirtEditPage() {
 
   const handleRemoveFromCart = (index: number) => {
     const itemToRemove = cartItems[index];
+    
+    // 3XL 사이즈 항목은 제거 불가능
+    if (itemToRemove.size === '3XL') {
+      setError('3XL 사이즈 상품은 변경할 수 없습니다.');
+      return;
+    }
+    
     const newTotalQuantity = totalQuantity - itemToRemove.quantity;
     
     const newItems = cartItems.filter((_, i) => i !== index);
@@ -223,6 +241,12 @@ export default function TshirtEditPage() {
 
   const handleUpdateQuantity = (index: number, newQuantity: number) => {
     if (newQuantity < 1) return;
+    
+    // 3XL 사이즈 항목은 수량 변경 불가능
+    if (cartItems[index].size === '3XL') {
+      setError('3XL 사이즈 상품은 변경할 수 없습니다.');
+      return;
+    }
     
     const diffQuantity = newQuantity - cartItems[index].quantity;
     const newTotalQuantity = totalQuantity + diffQuantity;
@@ -332,22 +356,25 @@ export default function TshirtEditPage() {
             <S.Notice>
               * 색상, 사이즈, 각 항목별 수량을 변경할 수 있습니다.<br />
               * 총 수량({originalTotalQuantity}개)은 변경할 수 없습니다.<br />
-              * 모든 변경은 {deadline || tshirt.deadline}까지만 가능합니다.
+              * 모든 변경은 {deadline || tshirt.deadline}까지만 가능합니다.<br />
+              * 3XL 사이즈는 변경이 불가능합니다.
             </S.Notice>
 
             <S.Sheet>
               <S.Section>
                 <S.Label>사이즈</S.Label>
                 <S.OptionGroup>
-                  {availableSizes.map(size => (
-                    <S.OptionButton
-                      key={size}
-                      selected={selectedSize === size}
-                      onClick={() => setSelectedSize(size)}
-                    >
-                      {size}
-                    </S.OptionButton>
-                  ))}
+                  {availableSizes
+                    .filter(size => size !== '3XL') // 3XL 사이즈 옵션 제거
+                    .map(size => (
+                      <S.OptionButton
+                        key={size}
+                        selected={selectedSize === size}
+                        onClick={() => setSelectedSize(size)}
+                      >
+                        {size}
+                      </S.OptionButton>
+                    ))}
                 </S.OptionGroup>
               </S.Section>
 
@@ -398,19 +425,25 @@ export default function TshirtEditPage() {
                         <S.QuantityControl>
                           <S.QuantityButton
                             onClick={() => handleUpdateQuantity(index, item.quantity - 1)}
+                            disabled={item.size === '3XL'} // 3XL 사이즈는 수량 변경 버튼 비활성화
                           >
                             -
                           </S.QuantityButton>
                           <S.QuantityDisplay>{item.quantity}</S.QuantityDisplay>
                           <S.QuantityButton
                             onClick={() => handleUpdateQuantity(index, item.quantity + 1)}
+                            disabled={item.size === '3XL'} // 3XL 사이즈는 수량 변경 버튼 비활성화
                           >
                             +
                           </S.QuantityButton>
                         </S.QuantityControl>
                       </S.CartItemInfo>
-                      <S.RemoveButton onClick={() => handleRemoveFromCart(index)}>
-                        삭제
+                      <S.RemoveButton 
+                        onClick={() => handleRemoveFromCart(index)}
+                        disabled={item.size === '3XL'} // 3XL 사이즈는 삭제 버튼 비활성화
+                        style={item.size === '3XL' ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                      >
+                        {item.size === '3XL' ? '변경불가' : '삭제'}
                       </S.RemoveButton>
                     </S.CartItem>
                   ))}
@@ -423,12 +456,12 @@ export default function TshirtEditPage() {
                 <S.CancelButton onClick={() => router.push('/myinfo')}>
                   취소
                 </S.CancelButton>
-                <S.OrderButton 
+                <S.SaveButton 
                   onClick={handleSaveChanges}
                   disabled={cartItems.length === 0 || totalQuantity !== originalTotalQuantity}
                 >
                   변경사항 저장
-                </S.OrderButton>
+                </S.SaveButton>
               </S.ButtonGroup>
             </S.Sheet>
           </S.InfoSection2>

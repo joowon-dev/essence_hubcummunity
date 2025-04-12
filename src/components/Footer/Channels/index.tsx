@@ -31,13 +31,6 @@ function Channels({ isFooter = false }: ChannelsProps) {
 
   return (
     <S.ChannelButtonsWrap isFooter={isFooter}>
-      <MailLogo
-        width={30}
-        height={30}
-        id="mail"
-        alt="메일"
-        onClick={handleClick}
-      />
 
       <InstagramLogo
         width={30}
@@ -51,14 +44,6 @@ function Channels({ isFooter = false }: ChannelsProps) {
         height={30}
         id="youtube"
         alt="유튜브"
-        onClick={handleClick}
-      />
-
-      <KakaoLogo
-        width={30}
-        height={30}
-        id="kakao"
-        alt="카카오톡 채널"
         onClick={handleClick}
       />
     </S.ChannelButtonsWrap>

@@ -4,6 +4,7 @@ import * as S from './style';
 import PageLayout from '@src/components/common/PageLayout';
 import OrderSheet from './components/OrderSheet';
 import ImageSlider from './components/ImageSlider';
+import { useRouter } from 'next/router';
 
 interface TshirtData {
   id: number;
@@ -35,11 +36,23 @@ interface PriceInfo {
   }[];
 }
 
+interface OrderSheetItem {
+  id: string;
+  size: string;
+  color: string;
+  quantity: number;
+  price: number;
+}
+
 export default function TshirtPage() {
+  const [selectedSize, setSelectedSize] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
   const [tshirt, setTshirt] = useState<TshirtData | null>(null);
   const [options, setOptions] = useState<TshirtOption[]>([]);
+  const [orderSheets, setOrderSheets] = useState<OrderSheetItem[]>([]);
   const [isOrderSheetOpen, setIsOrderSheetOpen] = useState(false);
   const [deadlineInfo, setDeadlineInfo] = useState<DeadlineInfo | null>(null);
+  const router = useRouter();
 
   const priceInfo: PriceInfo = {
     basePrice: 10000,
@@ -49,6 +62,18 @@ export default function TshirtPage() {
       { size: '3XL', price: 11000 }
     ]
   };
+
+  // 컴포넌트 마운트 시 로컬스토리지에서 주문 시트 상태 확인
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const shouldOpenOrderSheet = localStorage.getItem('open_order_sheet') === 'true';
+      if (shouldOpenOrderSheet) {
+        // 주문 시트를 열고 플래그 제거
+        setIsOrderSheetOpen(true);
+        localStorage.removeItem('open_order_sheet');
+      }
+    }
+  }, []);
 
   // YYYYMMDD 형식의 문자열을 Date 객체로 변환하는 함수
   const parseDateFromString = (dateString: string) => {
@@ -143,8 +168,25 @@ export default function TshirtPage() {
     fetchTshirtData();
   }, []);
 
+  // Order Sheet를 열어주는 함수
   const handleOrder = () => {
     setIsOrderSheetOpen(true);
+  };
+
+  // 폼 유효성 검사
+  const isValidForm = () => {
+    // 여기에 필요한 유효성 검사 로직 추가
+    return true;
+  };
+
+  // 주문 생성 함수
+  const createOrder = async () => {
+    try {
+      // 여기에 주문 생성 로직 추가
+      console.log('주문 생성 로직');
+    } catch (error) {
+      console.error('주문 생성 실패:', error);
+    }
   };
 
   if (!tshirt) return <div>로딩 중...</div>;
@@ -161,11 +203,13 @@ export default function TshirtPage() {
             <S.Price>{priceInfo.basePrice.toLocaleString()}원~</S.Price>
             <S.Notice>
               ⭐️ 2장 이상 구매시 장당 {priceInfo.bulkDiscountAmount.toLocaleString()}원 할인<br/>
-              ⭐️ 3XL 사이즈는 {priceInfo.specialSizePrice[0].price.toLocaleString()}원
+              ⭐️ 3XL 사이즈는 {priceInfo.specialSizePrice[0].price.toLocaleString()}원<br/>
+              📞 문의 : <S.Link href="https://open.kakao.com/o/scWel1ph" target="_blank" rel="noopener noreferrer">https://open.kakao.com/o/scWel1ph</S.Link>
             </S.Notice>
 
             <S.SizeGuide>
               <S.SizeGuideTitle>사이즈 가이드</S.SizeGuideTitle>
+              <S.SizeGuideContent>기쁨홀 안내데스크 옆에서 실제 티셔츠 사이즈를 확인해보세요!</S.SizeGuideContent>
               <S.Table>
                 <thead>
                   <tr>

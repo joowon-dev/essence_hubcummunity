@@ -57,11 +57,11 @@ export const ContentWrapper = styled.article`
     gap: 70px;
   }
 
-  @media (max-width: 48rem) {
+
     gap: 80px;
     padding-top: 60vh;
     padding-bottom: 50px;
-  }
+
 `;
 
 export const Title = styled.h1`
@@ -82,11 +82,11 @@ export const Title = styled.h1`
   }
 
   /* 모바일 뷰 */
-  @media (max-width: 48rem) {
+
     font-size: 28rem;
     line-height: 42px;
     letter-spacing: -2%;
-  }
+
 `;
 
 export const DownScrollIcon = styled(IcDownScroll)`
@@ -103,10 +103,10 @@ export const DownScrollIcon = styled(IcDownScroll)`
     height: 42px;
   }
 
-  @media (max-width: 48rem) {
+
     min-width: 28px;
     min-height: 28px;
     width: 28px;
     height: 28px;
-  }
+
 `;

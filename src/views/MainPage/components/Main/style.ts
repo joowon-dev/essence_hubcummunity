@@ -1,20 +1,32 @@
 import styled from "@emotion/styled";
 
-export const Container = styled.section`
+export const Container = styled.section<{ $anyDayOpen?: boolean }>`
   position: relative;
   display: flex;
   flex-direction: column;
   height: auto;
-  min-height: 66vh; /* 기본 높이는 유지하되, 더 늘어날 수 있음 */
-  transition: height 0.3s ease;
+  min-height: ${props => props.$anyDayOpen ? '100vh' : '66vh'};
+  transition: height 0.3s ease, min-height 0.3s ease;
   align-items: center;
   background-color: #f5f5f5;
+
+  @media (min-width: 58.75rem) {
+    width: 100%;
+    background-color: #f5f5f5;
+    min-height: ${props => props.$anyDayOpen ? '100vh' : '66vh'};
+  }
 `;
 
 export const Content = styled.main`
   display: flex;
   align-items: center;
   flex-direction: column;
+  width: 100%;
+
+  @media (min-width: 58.75rem) {
+    width: 100%;
+    max-width: 600px;
+  }
 `;
 
 export const ContentWrapper = styled.article`
@@ -28,9 +40,14 @@ export const ContentWrapper = styled.article`
   padding-top: 50px;
   // justify-content: center;
 
+  @media (min-width: 58.75rem) {
+    width: 600px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
   @media (max-width: 90rem) {
   }
 
-  @media (max-width: 48rem) {
-  }
+
 `;

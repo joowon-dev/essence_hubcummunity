@@ -7,9 +7,15 @@ export const Root = styled.div<{ isClosed: boolean }>`
   padding-top: 20px;
   padding-bottom: 13px;
   font-family: var(--font-wanted);
+  
+
+  
+  @media (min-width: 58.75rem) {
+    width: 100%;
+    max-width: 550px;
+    padding-top: 20px;
+    padding-bottom: 13px;
   }
-  @media (max-width: 48rem) {
-    
 `;
 
 export const Section = styled.div`
@@ -19,7 +25,11 @@ export const Section = styled.div`
   cursor: pointer;
   width: 100%;
 
-  @media (max-width: 48rem) {
+
+    padding-top: 13px;
+
+  
+  @media (min-width: 58.75rem) {
     padding-top: 13px;
   }
 `;

@@ -4,6 +4,7 @@ import { useAuthStore } from '@src/store/auth';
 import * as S from './style';
 import { useRouter } from 'next/router';
 import OrderConfirmation from '../OrderConfirmation';
+import { getCachedBankAccount, BankAccount } from '@src/lib/api/bank';
 
 interface TshirtOption {
   id: number;
@@ -42,13 +43,6 @@ interface OrderSheetProps {
 const CART_STORAGE_KEY = 'tshirt_cart_data';
 const REDIRECT_STORAGE_KEY = 'login_redirect';
 
-// 입금 계좌 정보
-const BANK_ACCOUNT = {
-  bank: '신한은행',
-  account: '3333063840721',
-  holder: '에센스'
-};
-
 export default function OrderSheet({ tshirtId, options, priceInfo, onClose }: OrderSheetProps) {
   const router = useRouter();
   const { phoneNumber, isAuthenticated } = useAuthStore();
@@ -62,20 +56,38 @@ export default function OrderSheet({ tshirtId, options, priceInfo, onClose }: Or
   const [isCheckingOrders, setIsCheckingOrders] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [bankAccount, setBankAccount] = useState<BankAccount>({
+    bank: '',
+    account: '',
+    holder: ''
+  });
+
+  // 계좌 정보 불러오기
+  useEffect(() => {
+    async function loadBankAccount() {
+      const account = await getCachedBankAccount();
+      setBankAccount(account);
+    }
+    
+    loadBankAccount();
+  }, []);
 
   // 컴포넌트 마운트 시 로컬스토리지에서 장바구니 데이터 복원
   useEffect(() => {
-    const savedCart = localStorage.getItem(CART_STORAGE_KEY);
-    if (savedCart) {
-      try {
-        const parsedCart = JSON.parse(savedCart);
-        if (Array.isArray(parsedCart) && parsedCart.length > 0) {
-          setCartItems(parsedCart);
-          calculateTotalPrice(parsedCart);
-          localStorage.removeItem(CART_STORAGE_KEY); // 복원 후 삭제
+    if (typeof window !== 'undefined') {
+      const savedCart = localStorage.getItem(CART_STORAGE_KEY);
+      if (savedCart) {
+        try {
+          const parsedCart = JSON.parse(savedCart);
+          if (Array.isArray(parsedCart) && parsedCart.length > 0) {
+            setCartItems(parsedCart);
+            calculateTotalPrice(parsedCart);
+            console.log('장바구니 데이터 복원 완료:', parsedCart);
+            localStorage.removeItem(CART_STORAGE_KEY); // 복원 후 삭제
+          }
+        } catch (e) {
+          console.error('장바구니 데이터 복원 실패:', e);
         }
-      } catch (e) {
-        console.error('장바구니 데이터 복원 실패:', e);
       }
     }
   }, []);
@@ -85,15 +97,32 @@ export default function OrderSheet({ tshirtId, options, priceInfo, onClose }: Or
     async function fetchUserName() {
       if (!isAuthenticated || !phoneNumber) return;
       try {
+        // 1. 일반 회원 테이블에서 확인
         const { data, error } = await supabase
           .from('users')
           .select('name')
           .eq('phone_number', phoneNumber)
           .single();
         
-        if (error) throw error;
-        if (data && data.name) {
+        if (!error && data && data.name) {
           setUserName(data.name);
+          return;
+        }
+
+        // 2. 티셔츠 구매 회원 테이블에서 확인
+        const { data: tshirtUserData, error: tshirtUserError } = await supabase
+          .from('tshirt_users')
+          .select('name')
+          .eq('phone_number', phoneNumber)
+          .single();
+        
+        if (tshirtUserError) {
+          console.error('사용자 정보 조회 중 오류:', tshirtUserError);
+          return;
+        }
+
+        if (tshirtUserData && tshirtUserData.name) {
+          setUserName(tshirtUserData.name);
         }
       } catch (err) {
         console.error('사용자 이름 조회 중 오류 발생:', err);
@@ -206,6 +235,10 @@ export default function OrderSheet({ tshirtId, options, priceInfo, onClose }: Or
     
     // 현재 경로를 저장하여 로그인 후 돌아올 수 있도록 함
     localStorage.setItem(REDIRECT_STORAGE_KEY, '/tshirt');
+    console.log('리다이렉션 경로 저장:', '/tshirt', REDIRECT_STORAGE_KEY);
+    
+    // 로그인 후 자동으로 주문 시트를 열기 위한 플래그 저장
+    localStorage.setItem('open_order_sheet', 'true');
     
     // 로그인 페이지로 이동
     router.push('/login');
@@ -249,19 +282,31 @@ export default function OrderSheet({ tshirtId, options, priceInfo, onClose }: Or
   };
 
   const handleOrder = async (depositorName: string) => {
+    if (cartItems.length === 0) {
+      setError('장바구니가 비어있습니다.');
+      return;
+    }
+
     try {
-      // 1. 주문 생성 (총 가격과 입금자명 포함)
+      // 1. 주문 생성
+      const now = new Date().toISOString();
+      const totalQuantity = getTotalQuantity();
+      const { baseTotal, discountAmount, finalTotal } = calculateTotalPrice(cartItems);
+      
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
-        .insert({
-          user_phone: phoneNumber,
-          status: '입금확인중',
-          total_price: totalPrice,
-          name: depositorName // 입금자명 저장
-        })
+        .insert([
+          {
+            user_phone: phoneNumber,
+            order_date: now,
+            status: '입금확인중',
+            total_price: finalTotal,
+            name: depositorName,
+          }
+        ])
         .select('order_id')
         .single();
-
+      
       if (orderError) throw orderError;
       
       const orderId = orderData.order_id;
@@ -286,9 +331,9 @@ export default function OrderSheet({ tshirtId, options, priceInfo, onClose }: Or
       alert('주문이 완료되었습니다. 주문번호: ' + orderId + '\n입금 후 확인까지 시간이 소요될 수 있습니다.');
       setShowConfirmation(false);
       onClose();
-    } catch (error) {
-      console.error('Error placing order:', error);
-      setError('주문 중 오류가 발생했습니다.');
+    } catch (error: any) {
+      console.error('주문 처리 중 오류 발생:', error);
+      setError('주문 처리 중 오류가 발생했습니다.');
     }
   };
 
@@ -309,9 +354,9 @@ export default function OrderSheet({ tshirtId, options, priceInfo, onClose }: Or
       <OrderConfirmation
         cartItems={cartItems}
         totalPrice={totalPrice}
-        bankAccount={BANK_ACCOUNT}
         onCancel={() => setShowConfirmation(false)}
         onConfirm={handleOrder}
+        bankAccount={bankAccount}
         formatPrice={formatPrice}
         userName={userName}
         userPhone={phoneNumber || undefined}

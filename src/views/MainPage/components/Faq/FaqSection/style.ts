@@ -15,8 +15,10 @@ export const Root = styled.div`
   width: 80vw;
   padding-bottom: 14px;
   padding-top: 14px;
-  @media (max-width: 48rem) {
-    
+    @media (min-width: 58.75rem) {
+    width: 100%;
+    max-width: 550px;
+    padding-bottom: 20px;
   }
 `;
 export const Section = styled.div`
@@ -26,8 +28,7 @@ export const Section = styled.div`
   cursor: pointer;
   width: 100%;
   padding-top: 6px;
-  @media (max-width: 48rem) {
-  }
+
 `;
 export const Tag = styled.span`
   color: #838383;
@@ -57,10 +58,9 @@ export const Button = styled.button<ButtonStyleProps>`
   height: 16px;
 
   /* stylelint-disable */
-  @media (max-width: 48rem) {
     width: 16px;
     height: 16px;
-  }
+
   ${ArrowDownAnimation}
   ${ArrowUpAnimation}
   
@@ -99,4 +99,20 @@ export const Contents = styled.div<ButtonStyleProps>`
           transition: max-height 0.15s ease-out;
           max-height: 0;
         `}
+        
+  a {
+    color: #0066cc;
+    text-decoration: underline;
+    font-weight: 500;
+    transition: color 0.2s;
+    
+    &:hover {
+      color: #004499;
+      text-decoration: underline;
+    }
+    
+    &:visited {
+      color: #551A8B;
+    }
+  }
 `;

@@ -6,6 +6,7 @@ import MobileHeader from "./Mobile";
 import { imgLogoHub } from "@src/assets/mainLogo";
 import { useRouter } from "next/router";
 import * as S from "./style";
+import { MenuState } from "./types";
 
 export function Header() {
   const pathname = usePathname();
@@ -16,6 +17,7 @@ export function Header() {
   const router = useRouter();
 
   const [opacity, setOpacity] = useState(0);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!isRootPath) return;
@@ -40,8 +42,13 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isRootPath]);
 
+  // 메뉴 상태 변경 핸들러
+  const handleMenuStateChange = (state: MenuState) => {
+    setIsMenuOpen(state === "open");
+  };
+
   return (
-    <S.Wrapper opacity={isRootPath ? opacity : 1}>
+    <S.Wrapper opacity={isRootPath ? opacity : 1} isMenuOpen={isMenuOpen}>
       <Logo
         onClick={() => router.push("/")}
         opacity={isRootPath ? opacity : 1}
@@ -49,7 +56,7 @@ export function Header() {
 
       {/* {isDesktop && <DesktopHeader />}
       {(isTablet || isMobile) && <MobileHeader />} */}
-      <MobileHeader />
+      <MobileHeader onMenuStateChange={handleMenuStateChange} />
     </S.Wrapper>
   );
 }

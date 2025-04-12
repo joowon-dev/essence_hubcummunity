@@ -1,16 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useAuthStore } from '@src/store/auth';
+import { useAuthStore, initializeAuthState } from '@src/store/auth';
 import { supabase } from '@src/lib/supabase';
 import * as S from './style';
 import PageLayout from '@src/components/common/PageLayout';
 import { useRouter } from 'next/router';
+import { getCachedBankAccount, BankAccount } from '@src/lib/api/bank';
 
 interface UserInfo {
   name: string;
   group_name: string;
-  departure_time: string;
-  return_time: string;
   phone_number: string;
+  // 선택적 필드로 변경 (일반 사용자만 해당)
+  departure_time?: string;
+  return_time?: string;
 }
 
 interface TshirtOrder {
@@ -35,27 +37,14 @@ interface ScheduleInfo {
   end_time: string;
 }
 
-interface BankAccount {
-  bank: string;
-  account: string;
-  holder: string;
-}
-
 interface OrderConfirmationProps {
   order: TshirtOrder;
   onClose: () => void;
 }
 
-// 은행 계좌 정보
-const BANK_ACCOUNT = {
-  bank: '카카오뱅크',
-  account: '3333063840721',
-  holder: '이지선'
-};
-
 export default function MyInfoPage() {
   const router = useRouter();
-  const { phoneNumber, isAuthenticated } = useAuthStore();
+  const { phoneNumber, isAuthenticated, logout } = useAuthStore();
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [tshirtOrders, setTshirtOrders] = useState<TshirtOrder[]>([]);
   const [currentOrderIndex, setCurrentOrderIndex] = useState(0);
@@ -67,6 +56,12 @@ export default function MyInfoPage() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<TshirtOrder | null>(null);
   const [copiedText, setCopiedText] = useState<string | null>(null);
+  const [userType, setUserType] = useState<'normal' | 'tshirt'>('normal'); // 사용자 유형 상태 추가
+  const [bankAccount, setBankAccount] = useState<BankAccount>({
+    bank: '',
+    account: '',
+    holder: ''
+  });
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const [currentCard, setCurrentCard] = useState(0);
@@ -109,7 +104,7 @@ export default function MyInfoPage() {
       let copyText = '';
       
       if (type === 'account') {
-        copyText = `${BANK_ACCOUNT.bank} ${BANK_ACCOUNT.account}`;
+        copyText = `${bankAccount.bank} ${bankAccount.account}`;
       } else if (type === 'depositor') {
         copyText = userInfo?.name || '';
       }
@@ -357,15 +352,15 @@ export default function MyInfoPage() {
             <S.BankInfo>
               <S.StaticInfoRow>
                 <S.InfoLabel>은행</S.InfoLabel>
-                <S.InfoValue>{BANK_ACCOUNT.bank}</S.InfoValue>
+                <S.InfoValue>{bankAccount.bank}</S.InfoValue>
               </S.StaticInfoRow>
               <S.StaticInfoRow>
                 <S.InfoLabel>계좌번호</S.InfoLabel>
-                <S.InfoValue>{BANK_ACCOUNT.account}</S.InfoValue>
+                <S.InfoValue>{bankAccount.account}</S.InfoValue>
               </S.StaticInfoRow>
               <S.StaticInfoRow>
                 <S.InfoLabel>예금주</S.InfoLabel>
-                <S.InfoValue>{BANK_ACCOUNT.holder}</S.InfoValue>
+                <S.InfoValue>{bankAccount.holder}</S.InfoValue>
               </S.StaticInfoRow>
               <S.CopyButton onClick={() => copyToClipboard('', 'account')}>
                 계좌정보 복사하기
@@ -449,24 +444,75 @@ export default function MyInfoPage() {
   };
 
   useEffect(() => {
-    if (!isAuthenticated || !phoneNumber) {
-      router.push('/login');
-      return;
+    // 세션 초기화 및 페이지 로드 시 인증 상태 검증
+    if (typeof window !== 'undefined') {
+      // 강제로 인증 상태 초기화
+      const isAuthenticated = initializeAuthState();
+      
+      // 인증 상태 재확인 (initializeAuthState 후에도 인증되지 않았을 경우)
+      if (!isAuthenticated && !useAuthStore.getState().isAuthenticated) {
+        console.log('인증되지 않은 사용자: 로그인 페이지로 리다이렉트');
+        // 로그인 후 돌아올 경로 저장
+        localStorage.setItem('login_redirect', '/myinfo');
+        // push 대신 replace를 사용하여 히스토리 스택에서 내정보 페이지를 제거
+        router.replace('/login');
+        return;
+      }
+    }
+
+    // 계좌 정보 로드
+    async function loadBankAccount() {
+      const account = await getCachedBankAccount();
+      setBankAccount(account);
     }
 
     async function fetchData() {
       try {
-        // 사용자 정보 조회
+        // 전화번호가 없으면 정보를 가져올 수 없음
+        if (!phoneNumber) {
+          console.error('전화번호 정보가 없습니다.');
+          setLoading(false);
+          return;
+        }
+
+        // 1. 일반 사용자 정보 확인
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('name, group_name, departure_time, return_time, phone_number')
           .eq('phone_number', phoneNumber)
           .single();
 
-        if (userError) throw userError;
-        setUserInfo(userData);
+        if (!userError && userData) {
+          setUserInfo(userData);
+          setUserType('normal');
+        } else {
+          // 2. 티셔츠 전용 사용자 정보 확인
+          const { data: tshirtUserData, error: tshirtUserError } = await supabase
+            .from('tshirt_users')
+            .select('name, group_name, phone_number')
+            .eq('phone_number', phoneNumber)
+            .single();
 
-        // 티셔츠 주문 내역 조회
+          if (tshirtUserError) {
+            console.error('사용자 정보 조회 실패:', phoneNumber, tshirtUserError);
+            
+            // 마지막 시도: 기본 사용자 정보 생성 (전화번호만 있는 경우)
+            setUserInfo({
+              name: '사용자',
+              group_name: '정보 없음',
+              phone_number: phoneNumber
+            });
+            setUserType('tshirt');
+            
+            // 추가 조치 필요 로그 출력
+            console.warn('기본 사용자 정보로 임시 복구됨. 관리자에게 문의하세요.');
+          } else {
+            setUserInfo(tshirtUserData);
+            setUserType('tshirt');
+          }
+        }
+
+        // 티셔츠 주문 내역 조회 (모든 사용자 유형에 공통)
         // 1. 주문 조회
         const { data: ordersData, error: ordersError } = await supabase
           .from('orders')
@@ -515,26 +561,29 @@ export default function MyInfoPage() {
           setTshirtOrders(sortedOrders);
         }
 
-        // 스케줄 정보 조회 - 차량 변경 마감
-        const { data: carChangeData, error: carChangeError } = await supabase
-          .from('schedules')
-          .select('title, day, end_time')
-          .eq('title', '차량 변경 마감')
-          .single();
+        // 차량 변경 정보는 일반 사용자만 필요
+        if (userData) {
+          // 스케줄 정보 조회 - 차량 변경 마감
+          const { data: carChangeData, error: carChangeError } = await supabase
+            .from('schedules')
+            .select('title, day, end_time')
+            .eq('title', '차량 변경 마감')
+            .single();
 
-        if (!carChangeError && carChangeData) {
-          setCarChangeInfo(carChangeData);
-          
-          // 현재 시간과 마감 시간 비교
-          const now = new Date();
-          const endTimeDate = parseDateFromString(carChangeData.end_time);
-          
-          if (endTimeDate) {
-            setIsCarChangeAvailable(now < endTimeDate);
+          if (!carChangeError && carChangeData) {
+            setCarChangeInfo(carChangeData);
+            
+            // 현재 시간과 마감 시간 비교
+            const now = new Date();
+            const endTimeDate = parseDateFromString(carChangeData.end_time);
+            
+            if (endTimeDate) {
+              setIsCarChangeAvailable(now < endTimeDate);
+            }
           }
         }
 
-        // 스케줄 정보 조회 - 티셔츠 구매 및 변경 마감
+        // 스케줄 정보 조회 - 티셔츠 구매 및 변경 마감 (모든 사용자 유형에 공통)
         const { data: tshirtChangeData, error: tshirtChangeError } = await supabase
           .from('schedules')
           .select('title, day, end_time')
@@ -567,7 +616,7 @@ export default function MyInfoPage() {
       total_price?: number;
     }>) {
       const now = new Date();
-      const oneDayInMs = 24 * 60 * 60 * 1000; // 24시간
+      const oneDayInMs =  60 * 60 * 1000; // 24시간
       
       const ordersToUpdate = orders.filter(order => {
         if (order.status !== '입금확인중') return false;
@@ -600,8 +649,9 @@ export default function MyInfoPage() {
       }
     }
 
+    loadBankAccount(); // 계좌 정보 로드
     fetchData();
-  }, [phoneNumber, isAuthenticated, router]);
+  }, [phoneNumber, router]);
 
   const handleCarChange = () => {
     if (isCarChangeAvailable) {
@@ -614,7 +664,7 @@ export default function MyInfoPage() {
   const getSizesString = (items: TshirtOrderItem[], color: string) => {
     return items
       .filter(item => item.color === color)
-      .map(item => `${item.size}${item.quantity}`)
+      .map(item => ` ${item.size} ${item.quantity}`)
       .join(', ');
   };
 
@@ -651,7 +701,8 @@ export default function MyInfoPage() {
 
   return (
     <PageLayout>
-      <S.Container>
+      <S.Container>        
+       
         {showConfirmation && selectedOrder && (
           <OrderConfirmation 
             order={selectedOrder}
@@ -680,35 +731,38 @@ export default function MyInfoPage() {
           <S.Title>{userInfo.name}</S.Title>
           <S.Subtitle>{userInfo.group_name}</S.Subtitle>
 
-          <S.Section>
-            <S.SectionTitle>차량 정보</S.SectionTitle>
-            <S.TimeInfo>
-              <S.TimeBlock>
-                <S.TimeLabel>출발 차량</S.TimeLabel>
-                <S.Time>{userInfo.departure_time}</S.Time>
-              </S.TimeBlock>
-              <S.TimeBlock>
-                <S.TimeLabel>복귀 차량</S.TimeLabel>
-                <S.Time>{userInfo.return_time}</S.Time>
-              </S.TimeBlock>
-            </S.TimeInfo>
-            {isCarChangeAvailable && carChangeInfo ? (
-              <S.ChangeNotice onClick={handleCarChange}>
-                <S.ChangeIcon>
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6.99995 1.67332C9.93462 1.67332 12.3266 4.06528 12.3266 6.99995C12.3266 9.93462 9.93462 12.3266 6.99995 12.3266C4.06528 12.3266 1.67332 9.93462 1.67332 6.99995C1.67332 4.06528 4.06528 1.67332 6.99995 1.67332ZM6.99995 0.467285C3.39191 0.467285 0.467285 3.39191 0.467285 6.99995C0.467285 10.608 3.39191 13.5326 6.99995 13.5326C10.608 13.5326 13.5326 10.608 13.5326 6.99995C13.5326 3.39191 10.608 0.467285 6.99995 0.467285Z" fill="#000000"/>
-                    <path d="M7.603 6.26636H6.39697V10.2865H7.603V6.26636Z" fill="#000000"/>
-                    <path d="M6.99986 3.75391C6.5878 3.75391 6.24609 4.08556 6.24609 4.50768C6.24609 4.92979 6.5878 5.26144 6.99986 5.26144C7.41192 5.26144 7.75363 4.91974 7.75363 4.50768C7.75363 4.09561 7.42197 3.75391 6.99986 3.75391Z" fill="#000000"/>
-                  </svg>
-                </S.ChangeIcon>
-                <S.ChangeText>
-                차량정보 변경하기({carChangeInfo.day}까지)
-                </S.ChangeText>
-              </S.ChangeNotice>
-            ) : (
-              <S.Note>차량 변경 기간 마감</S.Note>
-            )}
-          </S.Section>
+          {/* 일반 사용자만 차량 정보 표시 */}
+          {userType === 'normal' && (
+            <S.Section>
+              <S.SectionTitle>차량 정보</S.SectionTitle>
+              <S.TimeInfo>
+                <S.TimeBlock>
+                  <S.TimeLabel>출발 차량</S.TimeLabel>
+                  <S.Time>{userInfo.departure_time}</S.Time>
+                </S.TimeBlock>
+                <S.TimeBlock>
+                  <S.TimeLabel>복귀 차량</S.TimeLabel>
+                  <S.Time>{userInfo.return_time}</S.Time>
+                </S.TimeBlock>
+              </S.TimeInfo>
+              {isCarChangeAvailable && carChangeInfo ? (
+                <S.ChangeNotice onClick={handleCarChange}>
+                  <S.ChangeIcon>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M6.99995 1.67332C9.93462 1.67332 12.3266 4.06528 12.3266 6.99995C12.3266 9.93462 9.93462 12.3266 6.99995 12.3266C4.06528 12.3266 1.67332 9.93462 1.67332 6.99995C1.67332 4.06528 4.06528 1.67332 6.99995 1.67332ZM6.99995 0.467285C3.39191 0.467285 0.467285 3.39191 0.467285 6.99995C0.467285 10.608 3.39191 13.5326 6.99995 13.5326C10.608 13.5326 13.5326 10.608 13.5326 6.99995C13.5326 3.39191 10.608 0.467285 6.99995 0.467285Z" fill="#000000"/>
+                      <path d="M7.603 6.26636H6.39697V10.2865H7.603V6.26636Z" fill="#000000"/>
+                      <path d="M6.99986 3.75391C6.5878 3.75391 6.24609 4.08556 6.24609 4.50768C6.24609 4.92979 6.5878 5.26144 6.99986 5.26144C7.41192 5.26144 7.75363 4.91974 7.75363 4.50768C7.75363 4.09561 7.42197 3.75391 6.99986 3.75391Z" fill="#000000"/>
+                    </svg>
+                  </S.ChangeIcon>
+                  <S.ChangeText>
+                  차량정보 변경하기({carChangeInfo.day}까지)
+                  </S.ChangeText>
+                </S.ChangeNotice>
+              ) : (
+                <S.Note>차량 변경 기간 마감</S.Note>
+              )}
+            </S.Section>
+          )}
 
           <S.Section>
             <S.SectionTitle>티셔츠 정보</S.SectionTitle>
@@ -747,7 +801,7 @@ export default function MyInfoPage() {
                                 alt="QR 코드" 
                                 style={{ width: '100px', height: '100px' }} 
                               />
-                              <div style={{ fontSize: '12px', marginTop: '4px', textAlign: 'center' }}>
+                              <div style={{ fontSize: '12px', marginTop: '4px', textAlign: 'center', color: '#000' }}>
                                 클릭하여 확대
                               </div>
                             </div>
@@ -800,7 +854,7 @@ export default function MyInfoPage() {
                 
                 {/* 변경 가능 기간 안내 */}
                 {isTshirtChangeAvailable && tshirtChangeInfo ? (
-                  <S.ChangeNotice onClick={() => router.push('/tshirt')}>
+                  <S.ChangeNotice >
                     <S.ChangeIcon>
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M6.99995 1.67332C9.93462 1.67332 12.3266 4.06528 12.3266 6.99995C12.3266 9.93462 9.93462 12.3266 6.99995 12.3266C4.06528 12.3266 1.67332 9.93462 1.67332 6.99995C1.67332 4.06528 4.06528 1.67332 6.99995 1.67332ZM6.99995 0.467285C3.39191 0.467285 0.467285 3.39191 0.467285 6.99995C0.467285 10.608 3.39191 13.5326 6.99995 13.5326C10.608 13.5326 13.5326 10.608 13.5326 6.99995C13.5326 3.39191 10.608 0.467285 6.99995 0.467285Z" fill="#000000"/>
@@ -819,12 +873,13 @@ export default function MyInfoPage() {
             ) : (
               <S.TshirtMessage>
                 <S.InfoIcon>i</S.InfoIcon>
-                티셔츠를 구매하지 않았어요.
+                {userType === 'tshirt' ? '아직 티셔츠를 구매하지 않았어요.' : '티셔츠를 구매하지 않았어요.'}
               </S.TshirtMessage>
             )}
           </S.Section>
 
           <S.FaqButton>FAQ</S.FaqButton>
+          <S.LogoutButton onClick={logout}>로그아웃</S.LogoutButton>    
         </S.Content>
       </S.Container>
     </PageLayout>

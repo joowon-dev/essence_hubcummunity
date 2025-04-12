@@ -1,12 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import * as S from "./style";
 
-function CollapseLi() {
+interface CollapseLiProps {
+  onToggle?: (isOpen: boolean) => void;
+}
+
+function CollapseLi({ onToggle }: CollapseLiProps) {
   const [isOpened, setIsOpened] = useState(false);
 
   const handleClick = () => {
-    setIsOpened((prev) => !prev);
+    const newState = !isOpened;
+    setIsOpened(newState);
+    if (onToggle) {
+      onToggle(newState);
+    }
   };
+  
+  // 컴포넌트가 언마운트될 때 닫힘 상태로 알림
+  useEffect(() => {
+    return () => {
+      if (onToggle && isOpened) {
+        onToggle(false);
+      }
+    };
+  }, [onToggle, isOpened]);
 
   return (
     <S.Root>

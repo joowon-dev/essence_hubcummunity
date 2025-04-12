@@ -27,12 +27,12 @@ export const RecruitButtonWrapper = styled(Link)<{}>`
   }
 
   /* 모바일 뷰 */
-  @media (max-width: 48rem) {
+
     margin-top: 28px;
     font-size: 18rem;
     line-height: 28px; /* 155.556% */
     letter-spacing: -0.36px;
-  }
+
 `;
 
 export const MouseTrackerWrapper = styled.div<{
@@ -58,10 +58,10 @@ export const MouseTrackerWrapper = styled.div<{
   }
 
   /* 모바일 뷰 */
-  @media (max-width: 48rem) {
+
     width: 188px;
     height: 44px;
-  }
+
 
   &::before {
     content: '';

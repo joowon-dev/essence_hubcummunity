@@ -1,22 +1,19 @@
 import styled from "@emotion/styled";
-import { colors } from "@sopt-makers/colors";
-import Image from "next/image";
-import IcDownScroll from "@src/assets/icons/ic_downScroll.svg";
 
-export const Container = styled.section<{ $anyFaqOpen?: boolean }>`
+export const Container = styled.section<{ $anyDayOpen?: boolean }>`
   position: relative;
   display: flex;
   flex-direction: column;
   height: auto;
-  min-height: ${props => props.$anyFaqOpen ? '100vh' : '66vh'};
+  min-height: ${props => props.$anyDayOpen ? '100vh' : '66vh'};
   transition: height 0.3s ease, min-height 0.3s ease;
   align-items: center;
-  background-color: #000000;
-  font-family: var(--font-wanted);
+  background-color: #f5f5f5;
 
   @media (min-width: 58.75rem) {
     width: 100%;
-    min-height: ${props => props.$anyFaqOpen ? '100vh' : '66vh'};
+    background-color: #f5f5f5;
+    min-height: ${props => props.$anyDayOpen ? '100vh' : '66vh'};
   }
 `;
 
@@ -24,7 +21,7 @@ export const Content = styled.main`
   display: flex;
   align-items: center;
   flex-direction: column;
-  font-family: var(--font-wanted);
+  width: 100%;
 
   @media (min-width: 58.75rem) {
     width: 100%;
@@ -41,7 +38,7 @@ export const ContentWrapper = styled.article`
   z-index: 2;
   padding-bottom: 5px;
   padding-top: 50px;
-  font-family: var(--font-wanted);
+  // justify-content: center;
 
   @media (min-width: 58.75rem) {
     width: 600px;
@@ -52,18 +49,6 @@ export const ContentWrapper = styled.article`
   @media (max-width: 90rem) {
   }
 
-
-`;
-
-export const DayButtonContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin: 24px 0;
-  font-family: var(--font-wanted);
-
-  @media (min-width: 58.75rem) {
-    width: 100%;
-    max-width: 550px;
+  @media (max-width: 48rem) {
   }
-`;
+`; 

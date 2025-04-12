@@ -89,7 +89,7 @@ export const Price = styled.p`
   letter-spacing: -0.56px;
   line-height: 37px;
   color: #000;
-  margin-bottom: 40px;
+  margin-bottom: 20px;
 `;
 
 export const SizeGuide = styled.div`
@@ -103,8 +103,17 @@ export const SizeGuide = styled.div`
 export const SizeGuideTitle = styled.h4`
   font-size: 18px;
   font-weight: 700;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
   color: #000;
+`;
+
+export const SizeGuideContent = styled.p`
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -0.28px;
+  color: #555;
+  margin-bottom: 10px;
 `;
 
 export const Table = styled.table`
@@ -195,13 +204,25 @@ export const ApplyButton = styled(OrderButton)`
 `;
 
 export const Notice = styled.div`
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 20px;
+  margin-top: 16px;
   font-size: 14px;
   line-height: 1.6;
   color: #555;
+  background-color: #f9f9f9;
+  padding: 12px 16px;
+  border-radius: 8px;
+`;
+
+export const Link = styled.a`
+  color: #0066cc;
+  text-decoration: underline;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s;
+  
+  &:hover {
+    color: #004499;
+  }
 `;
 
 export const Sheet = styled.div`
@@ -349,10 +370,6 @@ export const Error = styled.div`
   margin-top: 16px;
 `;
 
-export const CancelButton = styled(Button)`
-  background-color: #f8f8f8;
-  color: #000;
-`;
 
 export const InfoInputRow = styled.div`
   display: flex;
@@ -429,3 +446,32 @@ export const CancelOrderButton = styled.button`
   font-weight: 700;
   cursor: pointer;
 `; 
+
+export const SaveButton = styled.button`
+  width: 60%;
+  background-color: #222;
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background-color: #000;
+  }
+`;
+
+
+export const CancelButton = styled(Button)`
+  background-color: #f8f8f8;
+  font-size: 18px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  color: #000;
+`;

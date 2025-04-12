@@ -12,12 +12,25 @@ export const Container = styled.section`
   transition: height 0.3s ease;
   align-items: center;
   background-color: #000000;
+    @media (min-width: 58.75rem) {
+    width: 100%;
+   
+  }
+  @media (min-width: 58.75rem) {
+    width: 100%;
+    
+    min-height: 413px;
+  }
 `;
 
 export const Content = styled.main`
   display: flex;
   align-items: center;
   flex-direction: column;
+
+  @media (min-width: 58.75rem) {
+    width: 100%;
+  }
 `;
 
 export const ContentWrapper = styled.article`
@@ -31,11 +44,16 @@ export const ContentWrapper = styled.article`
   padding-top: 50px;
   // justify-content: center;
 
+  @media (min-width: 58.75rem) {
+    width: 100%;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
   @media (max-width: 90rem) {
   }
 
-  @media (max-width: 48rem) {
-  }
+
 `;
 
 export const ButtonContainer = styled.section`
@@ -49,6 +67,11 @@ export const ButtonContainer = styled.section`
   background-repeat: no-repeat;
   background-size: contain;
   position: relative;
+
+  @media (min-width: 58.75rem) {
+    width: 500px;
+    height: 52px;
+  }
 `;
 
 export const ButtonContainer1 = styled.section`
@@ -63,6 +86,11 @@ export const ButtonContainer1 = styled.section`
   background-size: contain;
   position: relative;
   margin-bottom: 12px;
+
+  @media (min-width: 58.75rem) {
+    width: 500px;
+    height: 52px;
+  }
 `;
 
 export const Button = styled.button`
@@ -71,6 +99,8 @@ export const Button = styled.button`
   border: none;
   cursor: pointer;
   transition: all 0.3s ease;
+
+
   
   &:hover {
     opacity: 0.9;

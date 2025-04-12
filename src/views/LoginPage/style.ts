@@ -8,6 +8,30 @@ export const Container = styled.div`
   flex-direction: column;
   align-items: center;
   background-color: #FFFFFF;
+  position: relative;
+`;
+
+export const BackButton = styled.button`
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: #000;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px;
+  
+  svg {
+    margin-right: 4px;
+  }
+  
+  &:hover {
+    opacity: 0.8;
+  }
 `;
 
 export const Title = styled.h1`
@@ -80,18 +104,19 @@ export const LoginProblemText = styled.span`
 
 export const LoginButton = styled.button`
   width: 100%;
-  height: 48px;
-  background-color: #000000;
-  border-radius: 4px;
+  padding: 15px 0;
+  background-color: #000;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
   font-size: 16px;
   font-weight: 600;
-  color: #FFFFFF;
   margin-top: 24px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s;
 
   &:hover {
-    background-color: #333333;
+    background-color: #333;
   }
 `;
 
@@ -127,5 +152,35 @@ export const HelpLink = styled.a`
   
   svg {
     margin-right: 6px;
+  }
+`;
+
+export const TshirtSignupContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #eee;
+`;
+
+export const TshirtSignupText = styled.p`
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+`;
+
+export const TshirtSignupLink = styled.a`
+  font-size: 16px;
+  font-weight: 600;
+  color: #000;
+  text-decoration: none;
+  transition: color 0.2s;
+  text-decoration: underline;
+  
+  
+  &:hover {
+    color:rgb(78, 78, 78);
+    text-decoration: underline;
   }
 `; 

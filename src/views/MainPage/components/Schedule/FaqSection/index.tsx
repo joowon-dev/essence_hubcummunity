@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import * as S from "./style";
 import ClockIcon from "@src/assets/icons/ic_clock.svg";
 
@@ -6,9 +6,12 @@ interface FaqSectionProps {
   title: string;
   endTime: string; // YYYYMMDD 형식
   day: string; // ex. '04.29'
+  onToggle?: (isOpen: boolean) => void;
 }
 
-function FaqSection({ title, endTime, day }: FaqSectionProps) {
+function FaqSection({ title, endTime, day, onToggle }: FaqSectionProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  
   const { statusText, isClosed } = useMemo(() => {
     const today = new Date();
     const endDate = new Date(
@@ -25,9 +28,26 @@ function FaqSection({ title, endTime, day }: FaqSectionProps) {
     if (diff === 0) return { statusText: "오늘 마감", isClosed: false };
     return { statusText: `${diff}일 남음`, isClosed: false };
   }, [endTime]);
+  
+  const handleClick = () => {
+    const newState = !isOpen;
+    setIsOpen(newState);
+    if (onToggle) {
+      onToggle(newState);
+    }
+  };
+  
+  // 컴포넌트가 언마운트될 때 닫힘 상태로 알림
+  useEffect(() => {
+    return () => {
+      if (onToggle && isOpen) {
+        onToggle(false);
+      }
+    };
+  }, [onToggle, isOpen]);
 
   return (
-    <S.Root isClosed={isClosed}>
+    <S.Root isClosed={isClosed} onClick={handleClick}>
       <S.Rectangle isClosed={isClosed} isLong={day.length > 5}>
         <S.DateBadge isClosed={isClosed}>{day}</S.DateBadge>
       </S.Rectangle>
@@ -38,6 +58,11 @@ function FaqSection({ title, endTime, day }: FaqSectionProps) {
           <S.Status isClosed={isClosed}>{statusText}</S.Status>
         </S.DaySection>
       </S.Section>
+      {isOpen && (
+        <S.Contents isClosed={isClosed}>
+          이 일정에 대한 자세한 내용입니다.
+        </S.Contents>
+      )}
     </S.Root>
   );
 }

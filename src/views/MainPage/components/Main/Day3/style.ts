@@ -1,6 +1,6 @@
 import styled from "@emotion/styled";
 import { colors } from "@sopt-makers/colors";
-import { css } from "@emotion/react";
+import { css, keyframes } from "@emotion/react";
 import {
   ArrowDownAnimation,
   ArrowUpAnimation,
@@ -10,12 +10,47 @@ interface ButtonStyleProps {
   isOpened: boolean;
 }
 
+// 확장 애니메이션 키프레임
+const expandAnimation = keyframes`
+  0% {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    max-height: 3500px;
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+// 축소 애니메이션 키프레임
+const collapseAnimation = keyframes`
+  0% {
+    max-height: 3500px;
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+`;
+
 export const Root = styled.div`
   border-bottom: 1px solid #000000;
   width: 80vw;
   margin-bottom: 40px;
-  @media (max-width: 48rem) {
+
     padding-bottom: 10px;
+
+  
+  @media (min-width: 58.75rem) {
+    width: 100%;
+    max-width: 550px;
+    padding-bottom: 10px;
+    margin-bottom: 40px;
   }
 `;
 export const Section = styled.div`
@@ -24,7 +59,11 @@ export const Section = styled.div`
   align-items: center;
   cursor: pointer;
   width: 100%;
-  @media (max-width: 48rem) {
+
+    padding-top: 20px;
+
+  
+  @media (min-width: 58.75rem) {
     padding-top: 20px;
   }
 `;
@@ -46,10 +85,10 @@ export const Button = styled.button<ButtonStyleProps>`
   height: 16px;
 
   /* stylelint-disable */
-  @media (max-width: 48rem) {
+
     width: 16px;
     height: 16px;
-  }
+
   ${ArrowDownAnimation}
   ${ArrowUpAnimation}
   
@@ -66,29 +105,30 @@ export const Button = styled.button<ButtonStyleProps>`
 
 export const Contents = styled.div<ButtonStyleProps>`
   overflow: hidden;
+  width: 100%;
   line-height: 180%;
   letter-spacing: -0.03em;
   white-space: pre-line;
   color: black;
-  font-size: 20rem;
   font-weight: 400;
   font-style: normal;
-  @media (max-width: 48rem) {
-    font-size: 14rem;
+
+    font-size: 14px;
+
+  
+  @media (min-width: 58.75rem) {
+    font-size: 14px;
   }
 
   ${({ isOpened }) =>
     isOpened
       ? css`
-          transition: max-height 0.2s ease-in;
-          max-height: 3500px;
-          @media screen and (max-width: 80rem) {
-            max-height: 5000px;
-          }
+          animation: ${expandAnimation} 0.5s ease forwards;
+          transform-origin: top;
         `
       : css`
-          transition: max-height 0.15s ease-out;
-          max-height: 0;
+          animation: ${collapseAnimation} 0.4s ease forwards;
+          transform-origin: top;
         `}
 `;
 
@@ -97,12 +137,22 @@ export const Essence = styled.div`
   margin-top: 15px;
   padding-bottom: 15px;
   border-bottom: 1px solid #D7D7D7;
-  @media (max-width: 48rem) {
+
+  
+  @media (min-width: 58.75rem) {
+    width: 100%;
+    max-width: 550px;
+    margin-top: 15px;
+    padding-bottom: 15px;
   }
 `;
 
 export const EssenceLast = styled(Essence)`
   border-bottom: none;
+  
+  @media (min-width: 58.75rem) {
+    border-bottom: none;
+  }
 `;
 
 export const Tag = styled.span`

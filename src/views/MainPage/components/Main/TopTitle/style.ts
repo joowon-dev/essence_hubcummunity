@@ -6,6 +6,11 @@ export const BoxWrapper = styled.div`
   position: relative;
   width: 211px;
   height: 37px;
+  
+  @media (min-width: 58.75rem) {
+    width: 100%;
+    max-width: 300px;
+  }
 `;
 
 export const Group = styled.div`
@@ -13,6 +18,11 @@ export const Group = styled.div`
   height: 37px;
   display: flex;
   align-items: center;
+  
+  @media (min-width: 58.75rem) {
+    width: 100%;
+    max-width: 300px;
+  }
 `;
 
 export const DateWrapper = styled.div`
@@ -40,7 +50,6 @@ export const GroupWrapper = styled.div`
   position: relative;
   display: flex;
   align-items: center;
-
   margin-left: 4px;
 `;
 

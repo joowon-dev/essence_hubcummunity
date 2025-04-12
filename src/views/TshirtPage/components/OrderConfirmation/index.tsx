@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import * as S from './style';
+import { useRouter } from 'next/router';
 
 interface CartItem {
   size: string;
@@ -38,6 +39,7 @@ export default function OrderConfirmation({
   const [copiedText, setCopiedText] = useState<string | null>(null);
   const [depositorName, setDepositorName] = useState<string>('');
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const router = useRouter();
   
   // 초기 입금자명 설정
   useEffect(() => {
@@ -102,6 +104,12 @@ export default function OrderConfirmation({
       discountAmount,
       finalTotal
     };
+  };
+
+  const handleConfirm = async () => {
+    await onConfirm(depositorName);
+    // 예약 완료 후 내정보 페이지로 이동
+    router.push('/myinfo');
   };
 
   return (
@@ -215,12 +223,11 @@ export default function OrderConfirmation({
         <S.Notice>
           * 입금 확인 후 주문이 확정됩니다.<br />
           * 입금자명은 동일해야합니다. ex.홍길동1234 or 홍길동 <br />
-          * 24시간 내에 입금이 확인되지 않으면 주문은 자동 취소됩니다.
         </S.Notice>
         
         <S.ButtonGroup>
           <S.CancelButton onClick={onCancel}>뒤로가기</S.CancelButton>
-          <S.ConfirmButton onClick={() => onConfirm(depositorName)}>예약하기</S.ConfirmButton>
+          <S.ConfirmButton onClick={handleConfirm}>예약하기</S.ConfirmButton>
         </S.ButtonGroup>
       </S.Sheet>
       <S.Overlay onClick={onCancel} />

@@ -7,6 +7,11 @@ export const Container = styled.div`
   padding-top: 88px;
 `;
 
+export const Header = styled.div`
+  padding: 0 20px;
+  margin-bottom: 16px;
+`;
+
 export const Content = styled.main`
   padding: 0px 20px;
 `;
@@ -183,12 +188,31 @@ export const InfoIcon = styled.span`
 export const FaqButton = styled.button`
   width: 100%;
   height: 48px;
+  color:#000;
   background-color: #FFFFFF;
   border: 1px solid #000000;
   border-radius: 4px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
+`;
+
+export const LogoutButton = styled.button`
+  width: 100%;
+  height: 48px;
+  background-color: #f8f8f8;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  margin-top: 16px;
+  margin-bottom: 40px;
+  
+  &:hover {
+    background-color: #f0f0f0;
+  }
 `;
 
 export const LoadingWrapper = styled.div`
@@ -469,11 +493,9 @@ export const OrderSummary = styled.div`
 export const ItemColor = styled.div`
   font-size: 16px;
   font-weight: 700;
-  margin-bottom: 8px;
-  margin-top: 16px;
+ 
   
   &:first-of-type {
-    margin-top: 0;
   }
 `;
 
@@ -629,7 +651,7 @@ export const OrderHeader = styled.div`
 
 export const ColorRow = styled.div`
   display: flex;
-  justify-content: space-between;
+  justify-content: space-start;
   align-items: center;
   margin-bottom: 8px;
 `;
@@ -637,6 +659,7 @@ export const ColorRow = styled.div`
 export const ItemSizes = styled.div`
   font-size: 14px;
   color: #333;
+  margin-left: 16px;
 `;
 
 // 주문 상품 목록 스타일

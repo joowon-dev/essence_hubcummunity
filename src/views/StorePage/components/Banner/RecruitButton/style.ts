@@ -26,12 +26,11 @@ export const RecruitButtonWrapper = styled(Link)<{}>`
     margin-top: 51px;
   }
 
-  @media (max-width: 48rem) {
     margin-top: 28px;
     font-size: 18rem;
     line-height: 28px;
     letter-spacing: -0.36px;
-  }
+
 
   &:hover {
     background: ;
@@ -59,10 +58,10 @@ export const MouseTrackerWrapper = styled.div<{
     height: 59px;
   }
 
-  @media (max-width: 48rem) {
+
     width: 188px;
     height: 44px;
-  }
+
 
   &::before {
     content: "";
