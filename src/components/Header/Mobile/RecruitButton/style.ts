@@ -31,5 +31,4 @@ export const Text = styled.div`
   color: white;
   font-weight: 700;
   font-size: 14px;
-  font-family: "Wanted Sans", sans-serif;
 `;

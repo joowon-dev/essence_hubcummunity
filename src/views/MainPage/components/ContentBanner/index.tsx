@@ -11,7 +11,7 @@ export default function ContentBanner({}: BannerProps) {
   };
 
   const openYouTube = () => {
-    window.open("https://www.youtube.com/@hub_worship/videos", "_blank");
+    window.open("https://youtu.be/qM1fzUjcs20", "_blank");
   };
 
   const openInstagram = () => {

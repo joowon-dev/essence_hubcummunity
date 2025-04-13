@@ -18,7 +18,7 @@ function MainPage() {
   return (
     <PageLayout>
       <Banner  />
-      <ScrollingNotice text="1차 접수자 대상 : 티셔츠 무료 증정 이벤트 (4/27 주일 이후)" />
+      {/* <ScrollingNotice text="1차 접수자 대상 : 티셔츠 무료 증정 이벤트 (4/27 주일 이후)" /> */}
       <Main />
       <Schedule />
       <TshirtsBanner />

@@ -83,7 +83,7 @@ function CollapseLi({ onToggle }: CollapseLiProps) {
           </EssenceTitle>
           <EssenceContents>
             <Speaker>오현교 목사</Speaker>
-            <Group>히브 대학부</Group>
+            <Group>허브 대학부</Group>
           </EssenceContents>
         </EssenceLast>
       </Contents>

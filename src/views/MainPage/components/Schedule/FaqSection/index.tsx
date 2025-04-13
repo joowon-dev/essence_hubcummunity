@@ -58,11 +58,6 @@ function FaqSection({ title, endTime, day, onToggle }: FaqSectionProps) {
           <S.Status isClosed={isClosed}>{statusText}</S.Status>
         </S.DaySection>
       </S.Section>
-      {isOpen && (
-        <S.Contents isClosed={isClosed}>
-          이 일정에 대한 자세한 내용입니다.
-        </S.Contents>
-      )}
     </S.Root>
   );
 }
