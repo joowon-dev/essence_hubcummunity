@@ -655,8 +655,8 @@ export default function MyInfoPage() {
 
   const handleCarChange = () => {
     if (isCarChangeAvailable) {
-      alert('차량 변경 페이지로 이동합니다.');
-      // router.push('/car-change');
+      // 카카오톡 오픈채팅 링크로 연결
+      window.open('https://open.kakao.com/o/sFUY4Ooh', '_blank');
     }
   };
 
