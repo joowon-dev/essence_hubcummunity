@@ -204,7 +204,7 @@ export default function TshirtPage() {
             <S.Notice>
               ⭐️ 2장 이상 구매시 장당 {priceInfo.bulkDiscountAmount.toLocaleString()}원 할인<br/>
               ⭐️ 3XL 사이즈는 {priceInfo.specialSizePrice[0].price.toLocaleString()}원<br/>
-              📞 문의 : <S.Link href="https://open.kakao.com/o/scWel1ph" target="_blank" rel="noopener noreferrer">https://open.kakao.com/o/scWel1ph</S.Link>
+              📞 4XL 이상 사이즈 및 기타 문의:  <br/><S.Link href="https://open.kakao.com/o/scWel1ph" target="_blank" rel="noopener noreferrer">https://open.kakao.com/o/scWel1ph</S.Link>
             </S.Notice>
 
             <S.SizeGuide>

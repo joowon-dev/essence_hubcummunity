@@ -135,6 +135,7 @@ export default function LoginPage() {
           신청 폼에 기재했던 <br />
           나의 정보를 입력해주세요.
         </S.Title>
+        <S.TshirtSignupText>신청폼 제출 후 15분 후 이용해주세요</S.TshirtSignupText>
         
         <S.Form onSubmit={handleLogin}>
           <S.Input

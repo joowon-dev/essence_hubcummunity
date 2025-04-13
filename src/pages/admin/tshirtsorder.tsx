@@ -1,7 +1,17 @@
 import React, { useEffect, useState, useRef } from 'react';
 import styled from '@emotion/styled';
 import AdminLayout from '@src/components/AdminLayout';
-import { getTshirtOrders, updateOrderStatus, searchOrdersByName, searchOrdersByPhone, OrderItem } from '@src/lib/api/admin';
+import { 
+  getTshirtOrders, 
+  updateOrderStatus, 
+  searchOrdersByName, 
+  searchOrdersByPhone, 
+  OrderItem, 
+  getOrderDetails,
+  getOrderItems,
+  getTshirtOrderStats,
+  OrderItemDetail
+} from '@src/lib/api/admin';
 import Head from 'next/head';
 import * as XLSX from 'xlsx';
 
@@ -33,6 +43,16 @@ export default function TshirtOrderManagementPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   // 매칭된 주문과 입금 내역을 저장할 상태 추가
   const [matchedOrders, setMatchedOrders] = useState<Record<number, number>>({});
+  
+  // 주문 상세 팝업 관련 상태
+  const [showOrderDetail, setShowOrderDetail] = useState(false);
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState<OrderItem | null>(null);
+  const [orderItems, setOrderItems] = useState<OrderItemDetail[]>([]);
+  
+  // 대시보드 통계 관련 상태
+  const [showStats, setShowStats] = useState(false);
+  const [orderStats, setOrderStats] = useState<any>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
   
   // 주문 목록 불러오기
   const loadOrders = async () => {
@@ -359,6 +379,78 @@ export default function TshirtOrderManagementPage() {
     return [...matched, ...unmatched];
   };
   
+  // 대시보드 통계 로딩
+  const loadOrderStats = async () => {
+    setStatsLoading(true);
+    try {
+      const stats = await getTshirtOrderStats();
+      setOrderStats(stats);
+      setShowStats(true);
+    } catch (error) {
+      console.error('주문 통계 로드 중 오류:', error);
+      alert('주문 통계를 불러오는 중 오류가 발생했습니다.');
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+  
+  // 주문 상세 정보 조회
+  const handleViewOrderDetail = async (orderId: number) => {
+    setSelectedOrderId(orderId);
+    
+    try {
+      // 주문 기본 정보 조회
+      const orderDetail = await getOrderDetails(orderId);
+      if (!orderDetail) {
+        alert('주문 정보를 찾을 수 없습니다.');
+        return;
+      }
+      
+      // 주문 아이템 조회
+      const items = await getOrderItems(orderId);
+      
+      setSelectedOrderDetails(orderDetail);
+      setOrderItems(items);
+      setShowOrderDetail(true);
+    } catch (error) {
+      console.error('주문 상세 정보 조회 중 오류:', error);
+      alert('주문 상세 정보를 불러오는 중 오류가 발생했습니다.');
+    } finally {
+      setSelectedOrderId(null);
+    }
+  };
+  
+  // 통계 팝업 닫기
+  const closeStats = () => {
+    setShowStats(false);
+  };
+  
+  // 주문 상세 팝업 닫기
+  const closeOrderDetail = () => {
+    setShowOrderDetail(false);
+    setSelectedOrderDetails(null);
+    setOrderItems([]);
+  };
+  
+  // 총 수량 계산 함수
+  const getTotalQuantity = (items: OrderItemDetail[]): number => {
+    return items.reduce((sum, item) => sum + item.quantity, 0);
+  };
+  
+  // 옵션별 수량을 문자열로 표시
+  const formatOptionQuantity = (items: OrderItemDetail[]): string => {
+    const optionCounts: Record<string, number> = {};
+    
+    items.forEach(item => {
+      const key = `${item.color} / ${item.size}`;
+      optionCounts[key] = (optionCounts[key] || 0) + item.quantity;
+    });
+    
+    return Object.entries(optionCounts)
+      .map(([option, count]) => `${option}: ${count}개`)
+      .join(', ');
+  };
+  
   return (
     <>
       <Head>
@@ -387,6 +479,9 @@ export default function TshirtOrderManagementPage() {
             <SearchButton onClick={handleSearch} disabled={isPaymentCheckMode}>검색</SearchButton>
           </SearchContainer>
           <FilterContainer>
+            <DashboardButton onClick={loadOrderStats} disabled={statsLoading}>
+              {statsLoading ? '로딩 중...' : '대시보드 보기'}
+            </DashboardButton>
             <PaymentCheckModeButton 
               onClick={togglePaymentCheckMode}
               isActive={isPaymentCheckMode}
@@ -482,6 +577,8 @@ export default function TshirtOrderManagementPage() {
                       isProcessing={updateLoading && selectedOrderId === order.order_id}
                       isSelected={pendingChanges[order.order_id] === '입금완료'}
                       isMatched={isPaymentCheckMode && isOrderMatched(order.order_id)}
+                      onClick={() => !isPaymentCheckMode && handleViewOrderDetail(order.order_id)}
+                      style={{ cursor: isPaymentCheckMode ? 'default' : 'pointer' }}
                     >
                       {isPaymentCheckMode && (
                         <TableCell align="center">
@@ -564,6 +661,133 @@ export default function TshirtOrderManagementPage() {
           </ContentLayout>
         )}
       </AdminLayout>
+      
+      {/* 주문 상세 정보 팝업 */}
+      {showOrderDetail && selectedOrderDetails && (
+        <PopupOverlay onClick={closeOrderDetail}>
+          <PopupContent onClick={e => e.stopPropagation()}>
+            <PopupHeader>
+              <PopupTitle>주문 상세 정보 (#{selectedOrderDetails.order_id})</PopupTitle>
+              <CloseButton onClick={closeOrderDetail}>×</CloseButton>
+            </PopupHeader>
+            
+            <PopupBody>
+              <DetailSection>
+                <DetailTitle>주문자 정보</DetailTitle>
+                <DetailRow>
+                  <DetailLabel>이름:</DetailLabel>
+                  <DetailValue>{selectedOrderDetails.name}</DetailValue>
+                </DetailRow>
+                <DetailRow>
+                  <DetailLabel>전화번호:</DetailLabel>
+                  <DetailValue>{selectedOrderDetails.user_phone}</DetailValue>
+                </DetailRow>
+                <DetailRow>
+                  <DetailLabel>주문일시:</DetailLabel>
+                  <DetailValue>
+                    {new Date(selectedOrderDetails.order_date).toLocaleDateString()} {new Date(selectedOrderDetails.order_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                  </DetailValue>
+                </DetailRow>
+                <DetailRow>
+                  <DetailLabel>상태:</DetailLabel>
+                  <DetailValue>
+                    <StatusBadge color={getStatusColor(selectedOrderDetails.status)}>
+                      {selectedOrderDetails.status}
+                    </StatusBadge>
+                  </DetailValue>
+                </DetailRow>
+                <DetailRow>
+                  <DetailLabel>총 금액:</DetailLabel>
+                  <DetailValue>₩{selectedOrderDetails.total_price.toLocaleString()}</DetailValue>
+                </DetailRow>
+              </DetailSection>
+              
+              <DetailSection>
+                <DetailTitle>주문 항목</DetailTitle>
+                {orderItems.length === 0 ? (
+                  <EmptyMessage>주문 항목이 없습니다.</EmptyMessage>
+                ) : (
+                  <>
+                    <OrderItemsTable>
+                      <thead>
+                        <tr>
+                          <ItemTableHeader>항목 ID</ItemTableHeader>
+                          <ItemTableHeader>사이즈</ItemTableHeader>
+                          <ItemTableHeader>색상</ItemTableHeader>
+                          <ItemTableHeader>수량</ItemTableHeader>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orderItems.map(item => (
+                          <tr key={item.item_id}>
+                            <ItemTableCell>{item.item_id}</ItemTableCell>
+                            <ItemTableCell>{item.size}</ItemTableCell>
+                            <ItemTableCell>{item.color}</ItemTableCell>
+                            <ItemTableCell>{item.quantity}</ItemTableCell>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </OrderItemsTable>
+                    <OrderSummary>
+                      <SummaryText>총 수량: {getTotalQuantity(orderItems)}개</SummaryText>
+                    </OrderSummary>
+                  </>
+                )}
+              </DetailSection>
+            </PopupBody>
+          </PopupContent>
+        </PopupOverlay>
+      )}
+      
+      {/* 대시보드 통계 팝업 */}
+      {showStats && orderStats && (
+        <PopupOverlay onClick={closeStats}>
+          <StatsPopupContent onClick={e => e.stopPropagation()}>
+            <PopupHeader>
+              <PopupTitle>티셔츠 주문 통계 대시보드</PopupTitle>
+              <CloseButton onClick={closeStats}>×</CloseButton>
+            </PopupHeader>
+            
+            <StatsBody>
+              <StatsTable>
+                <thead>
+                  <tr>
+                    <StatsHeader>상태 / 옵션</StatsHeader>
+                    {orderStats.options.map((option: any) => (
+                      <StatsHeader key={`${option.size}|${option.color}`}>
+                        {option.size} / {option.color}
+                      </StatsHeader>
+                    ))}
+                    <StatsHeader>합계</StatsHeader>
+                  </tr>
+                </thead>
+                <tbody>
+                  {['미입금', '입금확인중', '입금완료', '취소됨', '합계'].map(status => (
+                    <tr key={status}>
+                      <StatsRowHeader>{status}</StatsRowHeader>
+                      {orderStats.options.map((option: any) => {
+                        const key = `${option.size}|${option.color}`;
+                        const value = orderStats.stats[status][key] || 0;
+                        return (
+                          <StatsCell 
+                            key={key}
+                            highlighted={status === '합계' || key.includes('합계')}
+                          >
+                            {value}
+                          </StatsCell>
+                        );
+                      })}
+                      <StatsCell highlighted>
+                        {Object.values(orderStats.stats[status]).reduce((sum: number, val: any) => sum + val, 0)}
+                      </StatsCell>
+                    </tr>
+                  ))}
+                </tbody>
+              </StatsTable>
+            </StatsBody>
+          </StatsPopupContent>
+        </PopupOverlay>
+      )}
     </>
   );
 }
@@ -728,6 +952,24 @@ const RefreshButton = styled.button`
   
   &:hover {
     background-color: #374151;
+  }
+  
+  &:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+  }
+`;
+
+const DashboardButton = styled.button`
+  padding: 8px 16px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: #2563eb;
   }
   
   &:disabled {
@@ -957,4 +1199,172 @@ const MatchedBadge = styled.span`
   border-radius: 4px;
   font-size: 11px;
   font-weight: 500;
+`;
+
+const PopupOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const PopupContent = styled.div`
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 80%;
+  max-height: 80%;
+  overflow: auto;
+`;
+
+const PopupHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+`;
+
+const PopupTitle = styled.h2`
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+`;
+
+const CloseButton = styled.button`
+  padding: 8px 16px;
+  background-color: #4b5563;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: #374151;
+  }
+`;
+
+const PopupBody = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const DetailSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const DetailTitle = styled.h3`
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+`;
+
+const DetailRow = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+const DetailLabel = styled.span`
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+`;
+
+const DetailValue = styled.span`
+  font-size: 14px;
+  color: #1f2937;
+`;
+
+const EmptyMessage = styled.div`
+  text-align: center;
+  padding: 16px;
+  color: #6b7280;
+  font-weight: 500;
+`;
+
+const OrderItemsTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+`;
+
+const ItemTableHeader = styled.th`
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+`;
+
+const ItemTableCell = styled.td`
+  padding: 12px 16px;
+  color: #1f2937;
+  font-size: 14px;
+  text-align: left;
+`;
+
+const OrderSummary = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+`;
+
+const SummaryText = styled.span`
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+`;
+
+const StatsPopupContent = styled.div`
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 80%;
+  max-height: 80%;
+  overflow: auto;
+`;
+
+const StatsBody = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const StatsTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+`;
+
+const StatsHeader = styled.th`
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+`;
+
+const StatsRowHeader = styled.th`
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+`;
+
+const StatsCell = styled.td<{ highlighted?: boolean }>`
+  padding: 12px 16px;
+  color: ${props => props.highlighted ? '#10b981' : '#1f2937'};
+  font-size: 14px;
+  text-align: left;
+  font-weight: ${props => props.highlighted ? '600' : '400'};
 `; 

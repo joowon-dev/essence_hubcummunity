@@ -38,6 +38,7 @@ export default function OrderConfirmation({
 }: OrderConfirmationProps) {
   const [copiedText, setCopiedText] = useState<string | null>(null);
   const [depositorName, setDepositorName] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
   
@@ -107,9 +108,17 @@ export default function OrderConfirmation({
   };
 
   const handleConfirm = async () => {
-    await onConfirm(depositorName);
-    // 예약 완료 후 내정보 페이지로 이동
-    router.push('/myinfo');
+    if (isSubmitting) return;
+    
+    try {
+      setIsSubmitting(true);
+      await onConfirm(depositorName);
+      router.push('/myinfo');
+    } catch (error) {
+      console.error('주문 확인 처리 중 오류 발생:', error);
+      alert('주문 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -226,8 +235,13 @@ export default function OrderConfirmation({
         </S.Notice>
         
         <S.ButtonGroup>
-          <S.CancelButton onClick={onCancel}>뒤로가기</S.CancelButton>
-          <S.ConfirmButton onClick={handleConfirm}>예약하기</S.ConfirmButton>
+          <S.CancelButton onClick={isSubmitting ? undefined : onCancel} disabled={isSubmitting}>뒤로가기</S.CancelButton>
+          <S.ConfirmButton 
+            onClick={handleConfirm} 
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? '처리중...' : '예약하기'}
+          </S.ConfirmButton>
         </S.ButtonGroup>
       </S.Sheet>
       <S.Overlay onClick={onCancel} />

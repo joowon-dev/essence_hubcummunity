@@ -246,16 +246,30 @@ export const Button = styled.button`
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 `;
 
 export const CancelButton = styled(Button)`
   background-color: #f1f1f1;
   color: #333;
+  
+  &:hover:not(:disabled) {
+    background-color: #e5e5e5;
+  }
 `;
 
 export const ConfirmButton = styled(Button)`
   background-color: #000;
   color: #fff;
+  
+  &:hover:not(:disabled) {
+    background-color: #333;
+  }
 `;
 
 export const DepositorInfo = styled.div`
@@ -312,4 +326,4 @@ export const PaymentLabel = styled.span`
 export const PaymentValue = styled.span`
   font-size: 16px;
   color: #000;
-`; 
+`;
