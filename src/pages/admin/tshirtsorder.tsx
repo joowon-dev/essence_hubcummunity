@@ -752,13 +752,40 @@ export default function TshirtOrderManagementPage() {
               <StatsTable>
                 <thead>
                   <tr>
-                    <StatsHeader>상태 / 옵션</StatsHeader>
-                    {orderStats.options.map((option: any) => (
-                      <StatsHeader key={`${option.size}|${option.color}`}>
-                        {option.size} / {option.color}
-                      </StatsHeader>
-                    ))}
-                    <StatsHeader>합계</StatsHeader>
+                    <StatsHeader rowSpan={2}>상태 / 옵션</StatsHeader>
+                    {/* 색상별로 그룹화 */}
+                    {Array.from(new Set(orderStats.options.map((option: any) => option.color)) as Set<string>).map(color => {
+                      // 해당 색상의 사이즈 수를 계산하여 colSpan 설정
+                      const sizesCount = orderStats.options.filter((option: any) => option.color === color).length;
+                      return (
+                        <StatsHeader 
+                          key={`color-${color}`}
+                          colSpan={sizesCount}
+                          colorHeader={true}
+                        >
+                          {color}
+                        </StatsHeader>
+                      );
+                    })}
+                    <StatsHeader rowSpan={2}>합계</StatsHeader>
+                  </tr>
+                  <tr>
+                    {/* 색상별 사이즈 표시 */}
+                    {Array.from(new Set(orderStats.options.map((option: any) => option.color)) as Set<string>).map(color => {
+                      // 해당 색상의 사이즈들 필터링
+                      const sizes = orderStats.options
+                        .filter((option: any) => option.color === color)
+                        .map((option: any) => option.size) as string[];
+                      
+                      return sizes.map(size => (
+                        <StatsHeader 
+                          key={`${color}-${size}`}
+                          sizeHeader={true}
+                        >
+                          {size}
+                        </StatsHeader>
+                      ));
+                    }).flat()}
                   </tr>
                 </thead>
                 <tbody>
@@ -1345,26 +1372,30 @@ const StatsTable = styled.table`
   border-collapse: collapse;
 `;
 
-const StatsHeader = styled.th`
-  padding: 12px 16px;
-  text-align: left;
+const StatsHeader = styled.th<{ colorHeader?: boolean; sizeHeader?: boolean; width?: string }>`
+  background-color: ${props => props.sizeHeader ? '#6ba6ed' : '#4a90e2'};
+  color: white;
+  padding: ${props => props.colorHeader ? '14px 18px' : '12px 15px'};
+  text-align: center;
   font-weight: 600;
-  color: #374151;
-  font-size: 14px;
+  font-size: ${props => props.colorHeader ? '16px' : '14px'};
+  width: ${props => props.width || 'auto'};
+  border: 1px solid #e2e8f0;
 `;
 
-const StatsRowHeader = styled.th`
+const StatsRowHeader = styled.td`
   padding: 12px 16px;
-  text-align: left;
   font-weight: 600;
   color: #374151;
-  font-size: 14px;
+  font-size: 15px;
+  border: 1px solid #e2e8f0;
 `;
 
 const StatsCell = styled.td<{ highlighted?: boolean }>`
-  padding: 12px 16px;
+  padding: 12px 15px;
+  text-align: center;
   color: ${props => props.highlighted ? '#10b981' : '#1f2937'};
-  font-size: 14px;
-  text-align: left;
-  font-weight: ${props => props.highlighted ? '600' : '400'};
+  font-weight: ${props => props.highlighted ? '700' : '400'};
+  font-size: 15px;
+  border: 1px solid #e2e8f0;
 `; 

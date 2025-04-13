@@ -46,6 +46,12 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
           <NavItem isActive={router.pathname === '/admin/inquiries'}>
             <Link href="/admin/inquiries">문의사항 관리</Link>
           </NavItem>
+          <NavItem isActive={router.pathname === '/admin/schedules'}>
+            <Link href="/admin/schedules">스케줄 관리</Link>
+          </NavItem>
+          <NavItem isActive={router.pathname === '/admin/faqs'}>
+            <Link href="/admin/faqs">FAQ 관리</Link>
+          </NavItem>
         </Nav>
         <LogoutButton onClick={handleLogout}>로그아웃</LogoutButton>
       </Sidebar>
@@ -91,6 +97,7 @@ const Nav = styled.nav`
 
 const NavItem = styled.div<{ isActive: boolean }>`
   margin-bottom: 8px;
+  font-size: 16px;
   
   a {
     display: block;

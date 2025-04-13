@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styled from '@emotion/styled';
 import AdminLayout from '@src/components/AdminLayout';
-import { getOrderStatusStats } from '@src/lib/api/admin';
+import { getOrderStatusStats, getTshirtOrderStats } from '@src/lib/api/admin';
 import Head from 'next/head';
 import Link from 'next/link';
 
@@ -13,17 +13,26 @@ export default function AdminDashboardPage() {
     '취소됨': 0
   });
   const [loading, setLoading] = useState(true);
+  const [orderStats, setOrderStats] = useState<any>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
   
   useEffect(() => {
     const loadStats = async () => {
       setLoading(true);
+      setStatsLoading(true);
       try {
+        // 기본 통계 로드
         const data = await getOrderStatusStats();
         setStats(data);
+        
+        // 상세 통계 로드
+        const detailedStats = await getTshirtOrderStats();
+        setOrderStats(detailedStats);
       } catch (error) {
         console.error('통계 정보 로드 중 오류:', error);
       } finally {
         setLoading(false);
+        setStatsLoading(false);
       }
     };
     
@@ -38,6 +47,22 @@ export default function AdminDashboardPage() {
   
   // 완료율 계산 (완료 주문 수 / 취소된 주문을 제외한 유효 주문 수)
   const completionRate = validOrders > 0 ? Math.round((stats['입금완료'] / validOrders) * 100) : 0;
+  
+  // 합계 계산 함수 (취소됨 상태 제외)
+  const calculateTotalWithoutCancelled = (status: string) => {
+    if (!orderStats || !orderStats.stats || !orderStats.stats[status]) return 0;
+    
+    return Object.values(orderStats.stats[status]).reduce((sum: number, val: any) => sum + (typeof val === 'number' ? val : 0), 0);
+  };
+  
+  // 옵션별 총합계 계산 (취소됨 상태 제외)
+  const calculateOptionTotalWithoutCancelled = (optionKey: string) => {
+    if (!orderStats || !orderStats.stats) return 0;
+    
+    return ['미입금', '입금확인중', '입금완료'].reduce((sum: number, status: string) => {
+      return sum + (orderStats.stats[status][optionKey] || 0);
+    }, 0);
+  };
   
   return (
     <>
@@ -91,6 +116,104 @@ export default function AdminDashboardPage() {
               </ProgressBarContainer>
             </CompletionRateCard>
             
+            {/* 티셔츠 주문 통계 테이블 */}
+            {!statsLoading && orderStats && (
+              <StatsCard>
+                <StatsCardHeader>
+                  <StatsCardTitle>티셔츠 주문 상세 통계</StatsCardTitle>
+                  <StatsCardSubtitle>옵션별 주문 수량 (취소됨 상태는 합계에 미포함)</StatsCardSubtitle>
+                </StatsCardHeader>
+                
+                <StatsTableContainer>
+                  <StatisticsTable>
+                    <thead>
+                      <tr>
+                        <StatisticsTableHeader rowSpan={2}>상태 / 옵션</StatisticsTableHeader>
+                        {/* 색상별로 그룹화 */}
+                        {Array.from(new Set(orderStats.options.map((option: any) => option.color)) as Set<string>).map(color => {
+                          // 해당 색상의 사이즈 수를 계산하여 colSpan 설정
+                          const sizesCount = orderStats.options.filter((option: any) => option.color === color).length;
+                          return (
+                            <StatisticsTableHeader 
+                              key={`color-${color}`}
+                              colSpan={sizesCount}
+                              colorHeader={true}
+                            >
+                              {color}
+                            </StatisticsTableHeader>
+                          );
+                        })}
+                        <StatisticsTableHeader rowSpan={2}>합계</StatisticsTableHeader>
+                      </tr>
+                      <tr>
+                        {/* 색상별 사이즈 표시 */}
+                        {Array.from(new Set(orderStats.options.map((option: any) => option.color)) as Set<string>).map(color => {
+                          // 해당 색상의 사이즈들 필터링
+                          const sizes = orderStats.options
+                            .filter((option: any) => option.color === color)
+                            .map((option: any) => option.size) as string[];
+                          
+                          return sizes.map(size => (
+                            <StatisticsTableHeader 
+                              key={`${color}-${size}`}
+                              sizeHeader={true}
+                            >
+                              {size}
+                            </StatisticsTableHeader>
+                          ));
+                        }).flat()}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {['미입금', '입금확인중', '입금완료', '취소됨'].map(status => (
+                        <StatisticsTableRow key={status}>
+                          <StatisticsTableCell>
+                            <StatusBadge status={status}>{status}</StatusBadge>
+                          </StatisticsTableCell>
+                          {orderStats.options.map((option: any) => {
+                            const key = `${option.size}|${option.color}`;
+                            const value = orderStats.stats[status][key] || 0;
+                            return (
+                              <StatisticsTableCell 
+                                key={key}
+                                highlighted={false}
+                              >
+                                {value}
+                              </StatisticsTableCell>
+                            );
+                          })}
+                          <StatisticsTableCell highlighted={false}>
+                            {calculateTotalWithoutCancelled(status)}
+                          </StatisticsTableCell>
+                        </StatisticsTableRow>
+                      ))}
+                      <StatisticsTableRow>
+                        <StatisticsTableCell>
+                          <StatusBadge status="합계">유효 합계</StatusBadge>
+                        </StatisticsTableCell>
+                        {orderStats.options.map((option: any) => {
+                          const key = `${option.size}|${option.color}`;
+                          const total = calculateOptionTotalWithoutCancelled(key);
+                          return (
+                            <StatisticsTableCell 
+                              key={key}
+                              highlighted={true}
+                            >
+                              {total}
+                            </StatisticsTableCell>
+                          );
+                        })}
+                        <StatisticsTableCell highlighted={true}>
+                          {['미입금', '입금확인중', '입금완료'].reduce((sum, status) => 
+                            sum + calculateTotalWithoutCancelled(status), 0)}
+                        </StatisticsTableCell>
+                      </StatisticsTableRow>
+                    </tbody>
+                  </StatisticsTable>
+                </StatsTableContainer>
+              </StatsCard>
+            )}
+            
             <QuickActionsContainer>
               <QuickActionTitle>바로가기</QuickActionTitle>
               <QuickActionGrid>
@@ -108,6 +231,24 @@ export default function AdminDashboardPage() {
                     <QuickActionContent>
                       <QuickActionIcon>📝</QuickActionIcon>
                       <QuickActionText>문의사항 관리</QuickActionText>
+                    </QuickActionContent>
+                  </Link>
+                </QuickActionCard>
+
+                <QuickActionCard>
+                  <Link href="/admin/schedules">
+                    <QuickActionContent>
+                      <QuickActionIcon>🗓️</QuickActionIcon>
+                      <QuickActionText>스케줄 관리</QuickActionText>
+                    </QuickActionContent>
+                  </Link>
+                </QuickActionCard>
+                
+                <QuickActionCard>
+                  <Link href="/admin/faqs">
+                    <QuickActionContent>
+                      <QuickActionIcon>❓</QuickActionIcon>
+                      <QuickActionText>FAQ 관리</QuickActionText>
                     </QuickActionContent>
                   </Link>
                 </QuickActionCard>
@@ -199,6 +340,116 @@ const ProgressBar = styled.div<{ width: string }>`
   width: ${props => props.width};
   border-radius: 9999px;
   transition: width 0.5s ease;
+`;
+
+// 통계 테이블 관련 스타일
+const StatsCard = styled.div`
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  margin-bottom: 24px;
+  overflow: hidden;
+`;
+
+const StatsCardHeader = styled.div`
+  margin-bottom: 16px;
+`;
+
+const StatsCardTitle = styled.h3`
+  font-size: 16px;
+  font-weight: 600;
+  color: #4b5563;
+  margin: 0 0 8px 0;
+`;
+
+const StatsCardSubtitle = styled.p`
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+`;
+
+const StatsTableContainer = styled.div`
+  overflow-x: auto;
+  margin: 0 -16px;
+`;
+
+const StatisticsTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+`;
+
+const StatisticsTableHeader = styled.th<{ colorHeader?: boolean; sizeHeader?: boolean }>`
+  background-color: ${props => props.sizeHeader ? '#6ba6ed' : '#4a90e2'};
+  color: white;
+  padding: ${props => props.colorHeader ? '14px 18px' : '12px 15px'};
+  text-align: center;
+  font-weight: 600;
+  font-size: ${props => props.colorHeader ? '16px' : '14px'};
+  &:first-child {
+    text-align: left;
+  }
+  border: 1px solid #e2e8f0;
+`;
+
+const StatisticsTableRow = styled.tr`
+  &:nth-child(even) {
+    background-color: #f8f9fa;
+  }
+  &:last-child {
+    font-weight: bold;
+    background-color: #e9ecef;
+  }
+`;
+
+const StatisticsTableCell = styled.td<{ highlighted?: boolean }>`
+  padding: 12px 15px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+  border: 1px solid #e2e8f0;
+  color: ${props => props.highlighted ? '#10b981' : '#1f2937'};
+  font-weight: ${props => props.highlighted ? '700' : '400'};
+  font-size: 15px;
+  &:first-child {
+    text-align: left;
+  }
+`;
+
+const StatisticsSectionTitle = styled.h3`
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-size: 18px;
+  color: #333;
+`;
+
+const StatisticsContainer = styled.div`
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+`;
+
+const StatusBadge = styled.span<{ status: string }>`
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  background-color: ${props => {
+    switch (props.status) {
+      case '미입금': return '#ef4444';
+      case '입금확인중': return '#f97316';
+      case '입금완료': return '#10b981';
+      case '취소됨': return '#6b7280';
+      case '합계': return '#3b82f6';
+      default: return '#6b7280';
+    }
+  }};
 `;
 
 const QuickActionsContainer = styled.div`

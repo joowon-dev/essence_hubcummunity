@@ -2,6 +2,7 @@ import isValidProp from "@emotion/is-prop-valid";
 import { MotionConfig } from "framer-motion";
 import type { AppProps } from "next/app";
 import Head from "next/head";
+import Script from "next/script";
 import { Global } from "@emotion/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -121,6 +122,18 @@ function MyApp({ Component, pageProps }: AppProps) {
         />
         <meta content="yes" name="apple-mobile-web-app-capable" />
       </Head>
+
+      {/* Jennifer Monitoring Script */}
+      <Script id="jennifer-script" strategy="afterInteractive" dangerouslySetInnerHTML={{
+        __html: `
+          (function(j,ennifer) {
+              j['dmndata']=[];j['jenniferFront']=function(args){window.dmndata.push(args)};
+              j['dmnaid']=ennifer;j['dmnatime']=new Date();j['dmnanocookie']=false;j['dmnajennifer']='JENNIFER_FRONT@INTG';
+          }(window, '49032406'));
+        `
+      }} />
+      <Script id="jennifer-demian" src="https://d-collect.jennifersoft.com/49032406/demian.js" strategy="afterInteractive" />
+
       <Global styles={global} />
       <QueryClientProvider client={queryClient}>
         <MotionConfig isValidProp={isValidProp}>
