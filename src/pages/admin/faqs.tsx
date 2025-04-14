@@ -2,34 +2,34 @@ import React, { useEffect, useState } from 'react';
 import styled from '@emotion/styled';
 import AdminLayout from '@src/components/AdminLayout';
 import Head from 'next/head';
-import axios from 'axios';
-import { DragDropContext, Droppable, Draggable, DropResult, DroppableProvided, DraggableProvided } from 'react-beautiful-dnd';
 import { useRouter } from 'next/router';
-import { Button, Table, Modal, Form, Input, InputNumber, Switch, Select, message, Popconfirm, Space, Typography } from 'antd';
+import { Button, Table, Modal, Form, Input, InputNumber, Switch, message, Popconfirm, Space, Typography } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined, UpOutlined, DownOutlined } from '@ant-design/icons';
+import { FaqItem, getAllFaqs } from '@src/lib/api/faq';
+import { createClient } from '@supabase/supabase-js';
 
-// FAQ 인터페이스 정의
-interface FAQ {
-  id: number;
-  tag: string;
-  title: string;
-  contents: string;
-  display_order: number;
-  is_visible: boolean;
-  created_at: string;
-}
+const { Title } = Typography;
+
+// Supabase 클라이언트 초기화
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false
+  }
+});
 
 // FAQ 태그 옵션
 const TAG_OPTIONS = ['일반', '배송', '주문', '결제', '교환/환불', '기타'];
-const { Title } = Typography;
 
 const FAQsPage: React.FC = () => {
-  const [faqs, setFaqs] = useState<FAQ[]>([]);
+  const [faqs, setFaqs] = useState<FaqItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [editingFaq, setEditingFaq] = useState<FAQ | null>(null);
+  const [editingFaq, setEditingFaq] = useState<FaqItem | null>(null);
   const [form] = Form.useForm();
-  const [tags, setTags] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>(TAG_OPTIONS);
   const router = useRouter();
 
   useEffect(() => {
@@ -40,12 +40,24 @@ const FAQsPage: React.FC = () => {
   const fetchFaqs = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/faqs');
-      const data = await response.json();
+      // 모든 FAQ 가져오기
+      const { data, error } = await supabase
+        .from('faqs')
+        .select('*')
+        .order('display_order', { ascending: true });
       
-      // 표시 순서로 정렬
-      const sortedData = data.sort((a: FAQ, b: FAQ) => a.display_order - b.display_order);
-      setFaqs(sortedData);
+      if (error) {
+        throw error;
+      }
+      
+      // 데이터가 배열인지 확인
+      if (Array.isArray(data)) {
+        setFaqs(data);
+      } else {
+        // 배열이 아니면 빈 배열 설정
+        console.warn('FAQ 데이터가 배열이 아닙니다:', data);
+        setFaqs([]);
+      }
     } catch (error) {
       console.error('FAQ 불러오기 실패:', error);
       message.error('FAQ를 불러오는 데 실패했습니다');
@@ -56,12 +68,25 @@ const FAQsPage: React.FC = () => {
 
   const fetchTags = async () => {
     try {
-      const response = await fetch('/api/admin/faq-tags');
-      const data = await response.json();
-      setTags(data);
+      // 모든 고유한 태그 가져오기
+      const { data, error } = await supabase
+        .from('faqs')
+        .select('tag');
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (Array.isArray(data)) {
+        // 고유한 태그 목록 생성
+        const uniqueTags = Array.from(new Set(data.map(item => item.tag).filter(Boolean)));
+        setTags(uniqueTags.length > 0 ? uniqueTags : TAG_OPTIONS);
+      }
     } catch (error) {
       console.error('태그 불러오기 실패:', error);
       message.error('태그를 불러오는 데 실패했습니다');
+      // API 호출 실패시 기본 태그 옵션 사용
+      setTags(TAG_OPTIONS);
     }
   };
 
@@ -77,7 +102,7 @@ const FAQsPage: React.FC = () => {
     setModalVisible(true);
   };
 
-  const showEditModal = (record: FAQ) => {
+  const showEditModal = (record: FaqItem) => {
     setEditingFaq(record);
     form.setFieldsValue({
       tag: record.tag,
@@ -98,36 +123,34 @@ const FAQsPage: React.FC = () => {
       const values = await form.validateFields();
       
       if (editingFaq) {
-        // FAQ 수정
-        const response = await fetch(`/api/admin/faqs/${editingFaq.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(values),
-        });
+        // FAQ 수정 - API 엔드포인트 대신 Supabase 직접 호출
+        const { error } = await supabase
+          .from('faqs')
+          .update(values)
+          .eq('id', editingFaq.id);
         
-        if (response.ok) {
-          message.success('FAQ가 수정되었습니다');
-          fetchFaqs();
-        } else {
+        if (error) {
+          console.error('FAQ 수정 오류:', error);
           throw new Error('FAQ 수정 실패');
         }
-      } else {
-        // 새 FAQ 추가
-        const response = await fetch('/api/admin/faqs', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(values),
-        });
         
-        if (response.ok) {
-          message.success('새 FAQ가 추가되었습니다');
-          fetchFaqs();
-        } else {
+        message.success('FAQ가 수정되었습니다');
+      } else {
+        // 새 FAQ 추가 - API 엔드포인트 대신 Supabase 직접 호출
+        const { error } = await supabase
+          .from('faqs')
+          .insert([values]);
+        
+        if (error) {
+          console.error('FAQ 추가 오류:', error);
           throw new Error('FAQ 추가 실패');
         }
+        
+        message.success('새 FAQ가 추가되었습니다');
       }
       
       setModalVisible(false);
+      fetchFaqs();
     } catch (error) {
       console.error('제출 오류:', error);
       message.error('제출 중 오류가 발생했습니다');
@@ -136,42 +159,60 @@ const FAQsPage: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await fetch(`/api/admin/faqs/${id}`, {
-        method: 'DELETE',
-      });
+      // FAQ 삭제 - API 엔드포인트 대신 Supabase 직접 호출
+      const { error } = await supabase
+        .from('faqs')
+        .delete()
+        .eq('id', id);
       
-      if (response.ok) {
-        message.success('FAQ가 삭제되었습니다');
-        fetchFaqs();
-      } else {
+      if (error) {
+        console.error('FAQ 삭제 오류:', error);
         throw new Error('FAQ 삭제 실패');
       }
+      
+      message.success('FAQ가 삭제되었습니다');
+      fetchFaqs();
     } catch (error) {
       console.error('삭제 오류:', error);
       message.error('삭제 중 오류가 발생했습니다');
     }
   };
 
-  const handleMoveUp = async (record: FAQ) => {
+  const handleMoveUp = async (record: FaqItem) => {
     const currentIndex = faqs.findIndex(f => f.id === record.id);
     if (currentIndex <= 0) return;
     
     const prevFaq = faqs[currentIndex - 1];
     
     try {
-      // 교환할 두 FAQ의 표시 순서를 교환
-      await Promise.all([
-        fetch(`/api/admin/faqs/${record.id}/order`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ display_order: prevFaq.display_order }),
+      console.log('순서 변경 시도:', {
+        current: record.id,
+        new_order: prevFaq.display_order,
+        prev: prevFaq.id,
+        new_order_prev: record.display_order
+      });
+      
+      // API 엔드포인트를 통해 순서 변경 (서버 측에서 서비스 역할 키 사용)
+      const response = await fetch('/api/admin/update-faq-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          faq1: {
+            id: record.id,
+            display_order: prevFaq.display_order
+          },
+          faq2: {
+            id: prevFaq.id,
+            display_order: record.display_order
+          }
         }),
-        fetch(`/api/admin/faqs/${prevFaq.id}/order`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ display_order: record.display_order }),
-        })
-      ]);
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('순서 변경 오류:', errorData);
+        throw new Error('순서 변경 실패');
+      }
       
       message.success('순서가 변경되었습니다');
       fetchFaqs();
@@ -181,26 +222,41 @@ const FAQsPage: React.FC = () => {
     }
   };
 
-  const handleMoveDown = async (record: FAQ) => {
+  const handleMoveDown = async (record: FaqItem) => {
     const currentIndex = faqs.findIndex(f => f.id === record.id);
     if (currentIndex >= faqs.length - 1) return;
     
     const nextFaq = faqs[currentIndex + 1];
     
     try {
-      // 교환할 두 FAQ의 표시 순서를 교환
-      await Promise.all([
-        fetch(`/api/admin/faqs/${record.id}/order`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ display_order: nextFaq.display_order }),
+      console.log('순서 변경 시도:', {
+        current: record.id,
+        new_order: nextFaq.display_order,
+        next: nextFaq.id,
+        new_order_next: record.display_order
+      });
+      
+      // API 엔드포인트를 통해 순서 변경 (서버 측에서 서비스 역할 키 사용)
+      const response = await fetch('/api/admin/update-faq-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          faq1: {
+            id: record.id,
+            display_order: nextFaq.display_order
+          },
+          faq2: {
+            id: nextFaq.id,
+            display_order: record.display_order
+          }
         }),
-        fetch(`/api/admin/faqs/${nextFaq.id}/order`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ display_order: record.display_order }),
-        })
-      ]);
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('순서 변경 오류:', errorData);
+        throw new Error('순서 변경 실패');
+      }
       
       message.success('순서가 변경되었습니다');
       fetchFaqs();
@@ -212,18 +268,19 @@ const FAQsPage: React.FC = () => {
 
   const handleVisibilityChange = async (id: number, value: boolean) => {
     try {
-      const response = await fetch(`/api/admin/faqs/${id}/visibility`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_visible: value }),
-      });
+      // 표시 여부 변경 - API 엔드포인트 대신 Supabase 직접 호출
+      const { error } = await supabase
+        .from('faqs')
+        .update({ is_visible: value })
+        .eq('id', id);
       
-      if (response.ok) {
-        message.success(`FAQ가 ${value ? '표시' : '숨김'} 처리되었습니다`);
-        fetchFaqs();
-      } else {
+      if (error) {
+        console.error('표시 상태 변경 오류:', error);
         throw new Error('표시 상태 변경 실패');
       }
+      
+      message.success(`FAQ가 ${value ? '표시' : '숨김'} 처리되었습니다`);
+      fetchFaqs();
     } catch (error) {
       console.error('표시 상태 변경 오류:', error);
       message.error('표시 상태 변경 중 오류가 발생했습니다');
@@ -258,7 +315,7 @@ const FAQsPage: React.FC = () => {
       title: '표시 여부',
       dataIndex: 'is_visible',
       key: 'is_visible',
-      render: (visible: boolean, record: FAQ) => (
+      render: (visible: boolean, record: FaqItem) => (
         <Switch
           checked={visible}
           onChange={(checked: boolean) => handleVisibilityChange(record.id, checked)}
@@ -269,12 +326,12 @@ const FAQsPage: React.FC = () => {
       title: '생성일',
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (text: string) => new Date(text).toLocaleString('ko-KR'),
+      render: (text: string) => text ? new Date(text).toLocaleString('ko-KR') : '',
     },
     {
       title: '관리',
       key: 'action',
-      render: (_: any, record: FAQ) => (
+      render: (_: any, record: FaqItem) => (
         <Space>
           <Button
             icon={<UpOutlined />}
@@ -354,15 +411,7 @@ const FAQsPage: React.FC = () => {
                 label="태그"
                 rules={[{ required: true, message: '태그를 입력해주세요' }]}
               >
-                {tags.length > 0 ? (
-                  <Select>
-                    {tags.map(tag => (
-                      <Select.Option key={tag} value={tag}>{tag}</Select.Option>
-                    ))}
-                  </Select>
-                ) : (
-                  <Input placeholder="새 태그 입력" />
-                )}
+                <Input placeholder="태그 입력 (예: 일반, 배송, 주문, 결제, 교환/환불, 기타)" />
               </Form.Item>
               <Form.Item
                 name="title"

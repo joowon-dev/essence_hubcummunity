@@ -52,6 +52,9 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
           <NavItem isActive={router.pathname === '/admin/faqs'}>
             <Link href="/admin/faqs">FAQ 관리</Link>
           </NavItem>
+          <NavItem isActive={router.pathname === '/admin/spreadsheet'}>
+            <Link href="/admin/spreadsheet">스프레드시트 동기화</Link>
+          </NavItem>
         </Nav>
         <LogoutButton onClick={handleLogout}>로그아웃</LogoutButton>
       </Sidebar>

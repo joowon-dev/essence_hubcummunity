@@ -9,7 +9,6 @@ import {
   OrderItem, 
   getOrderDetails,
   getOrderItems,
-  getTshirtOrderStats,
   OrderItemDetail
 } from '@src/lib/api/admin';
 import Head from 'next/head';
@@ -48,11 +47,6 @@ export default function TshirtOrderManagementPage() {
   const [showOrderDetail, setShowOrderDetail] = useState(false);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<OrderItem | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItemDetail[]>([]);
-  
-  // 대시보드 통계 관련 상태
-  const [showStats, setShowStats] = useState(false);
-  const [orderStats, setOrderStats] = useState<any>(null);
-  const [statsLoading, setStatsLoading] = useState(false);
   
   // 주문 목록 불러오기
   const loadOrders = async () => {
@@ -379,21 +373,6 @@ export default function TshirtOrderManagementPage() {
     return [...matched, ...unmatched];
   };
   
-  // 대시보드 통계 로딩
-  const loadOrderStats = async () => {
-    setStatsLoading(true);
-    try {
-      const stats = await getTshirtOrderStats();
-      setOrderStats(stats);
-      setShowStats(true);
-    } catch (error) {
-      console.error('주문 통계 로드 중 오류:', error);
-      alert('주문 통계를 불러오는 중 오류가 발생했습니다.');
-    } finally {
-      setStatsLoading(false);
-    }
-  };
-  
   // 주문 상세 정보 조회
   const handleViewOrderDetail = async (orderId: number) => {
     setSelectedOrderId(orderId);
@@ -418,11 +397,6 @@ export default function TshirtOrderManagementPage() {
     } finally {
       setSelectedOrderId(null);
     }
-  };
-  
-  // 통계 팝업 닫기
-  const closeStats = () => {
-    setShowStats(false);
   };
   
   // 주문 상세 팝업 닫기
@@ -479,9 +453,6 @@ export default function TshirtOrderManagementPage() {
             <SearchButton onClick={handleSearch} disabled={isPaymentCheckMode}>검색</SearchButton>
           </SearchContainer>
           <FilterContainer>
-            <DashboardButton onClick={loadOrderStats} disabled={statsLoading}>
-              {statsLoading ? '로딩 중...' : '대시보드 보기'}
-            </DashboardButton>
             <PaymentCheckModeButton 
               onClick={togglePaymentCheckMode}
               isActive={isPaymentCheckMode}
@@ -558,18 +529,20 @@ export default function TshirtOrderManagementPage() {
           <ContentLayout isPaymentCheckMode={isPaymentCheckMode}>
             <TableContainer isPaymentCheckMode={isPaymentCheckMode}>
               <Table>
-                <TableHead>
-                  {isPaymentCheckMode && (
-                    <TableHeader width="60px" align="center">선택</TableHeader>
-                  )}
-                  <TableHeader>주문번호</TableHeader>
-                  <TableHeader>주문자</TableHeader>
-                  <TableHeader>전화번호</TableHeader>
-                  <TableHeader>주문일자</TableHeader>
-                  <TableHeader>금액</TableHeader>
-                  <TableHeader>상태</TableHeader>
-                  {!isPaymentCheckMode && <TableHeader>관리</TableHeader>}
-                </TableHead>
+                <thead>
+                  <tr>
+                    {isPaymentCheckMode && (
+                      <TableHeader width="60px" align="center">선택</TableHeader>
+                    )}
+                    <TableHeader>주문번호</TableHeader>
+                    <TableHeader>주문자</TableHeader>
+                    <TableHeader>전화번호</TableHeader>
+                    <TableHeader>주문일자</TableHeader>
+                    <TableHeader>금액</TableHeader>
+                    <TableHeader>상태</TableHeader>
+                    {!isPaymentCheckMode && <TableHeader>관리</TableHeader>}
+                  </tr>
+                </thead>
                 <TableBody>
                   {getSortedOrderData().map((order) => (
                     <TableRow 
@@ -633,11 +606,13 @@ export default function TshirtOrderManagementPage() {
             {isPaymentCheckMode && filteredExcelData.length > 0 && (
               <ExcelDataTableContainer>
                 <Table>
-                  <TableHead>
-                    <TableHeader>내용</TableHeader>
-                    <TableHeader>거래금액</TableHeader>
-                    <TableHeader>거래일시</TableHeader>
-                  </TableHead>
+                  <thead>
+                    <tr>
+                      <TableHeader>내용</TableHeader>
+                      <TableHeader>거래금액</TableHeader>
+                      <TableHeader>거래일시</TableHeader>
+                    </tr>
+                  </thead>
                   <TableBody>
                     {getSortedExcelData().map((item, index) => (
                       <TableRow 
@@ -736,83 +711,6 @@ export default function TshirtOrderManagementPage() {
               </DetailSection>
             </PopupBody>
           </PopupContent>
-        </PopupOverlay>
-      )}
-      
-      {/* 대시보드 통계 팝업 */}
-      {showStats && orderStats && (
-        <PopupOverlay onClick={closeStats}>
-          <StatsPopupContent onClick={e => e.stopPropagation()}>
-            <PopupHeader>
-              <PopupTitle>티셔츠 주문 통계 대시보드</PopupTitle>
-              <CloseButton onClick={closeStats}>×</CloseButton>
-            </PopupHeader>
-            
-            <StatsBody>
-              <StatsTable>
-                <thead>
-                  <tr>
-                    <StatsHeader rowSpan={2}>상태 / 옵션</StatsHeader>
-                    {/* 색상별로 그룹화 */}
-                    {Array.from(new Set(orderStats.options.map((option: any) => option.color)) as Set<string>).map(color => {
-                      // 해당 색상의 사이즈 수를 계산하여 colSpan 설정
-                      const sizesCount = orderStats.options.filter((option: any) => option.color === color).length;
-                      return (
-                        <StatsHeader 
-                          key={`color-${color}`}
-                          colSpan={sizesCount}
-                          colorHeader={true}
-                        >
-                          {color}
-                        </StatsHeader>
-                      );
-                    })}
-                    <StatsHeader rowSpan={2}>합계</StatsHeader>
-                  </tr>
-                  <tr>
-                    {/* 색상별 사이즈 표시 */}
-                    {Array.from(new Set(orderStats.options.map((option: any) => option.color)) as Set<string>).map(color => {
-                      // 해당 색상의 사이즈들 필터링
-                      const sizes = orderStats.options
-                        .filter((option: any) => option.color === color)
-                        .map((option: any) => option.size) as string[];
-                      
-                      return sizes.map(size => (
-                        <StatsHeader 
-                          key={`${color}-${size}`}
-                          sizeHeader={true}
-                        >
-                          {size}
-                        </StatsHeader>
-                      ));
-                    }).flat()}
-                  </tr>
-                </thead>
-                <tbody>
-                  {['미입금', '입금확인중', '입금완료', '취소됨', '합계'].map(status => (
-                    <tr key={status}>
-                      <StatsRowHeader>{status}</StatsRowHeader>
-                      {orderStats.options.map((option: any) => {
-                        const key = `${option.size}|${option.color}`;
-                        const value = orderStats.stats[status][key] || 0;
-                        return (
-                          <StatsCell 
-                            key={key}
-                            highlighted={status === '합계' || key.includes('합계')}
-                          >
-                            {value}
-                          </StatsCell>
-                        );
-                      })}
-                      <StatsCell highlighted>
-                        {Object.values(orderStats.stats[status]).reduce((sum: number, val: any) => sum + val, 0)}
-                      </StatsCell>
-                    </tr>
-                  ))}
-                </tbody>
-              </StatsTable>
-            </StatsBody>
-          </StatsPopupContent>
         </PopupOverlay>
       )}
     </>
@@ -979,24 +877,6 @@ const RefreshButton = styled.button`
   
   &:hover {
     background-color: #374151;
-  }
-  
-  &:disabled {
-    background-color: #9ca3af;
-    cursor: not-allowed;
-  }
-`;
-
-const DashboardButton = styled.button`
-  padding: 8px 16px;
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  
-  &:hover {
-    background-color: #2563eb;
   }
   
   &:disabled {
@@ -1353,49 +1233,25 @@ const SummaryText = styled.span`
 `;
 
 const StatsPopupContent = styled.div`
-  background-color: white;
-  padding: 20px;
-  border-radius: 8px;
-  max-width: 80%;
-  max-height: 80%;
-  overflow: auto;
+  display: none; /* 대시보드 팝업 숨김 */
 `;
 
 const StatsBody = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: none; /* 대시보드 내용 숨김 */
 `;
 
 const StatsTable = styled.table`
-  width: 100%;
-  border-collapse: collapse;
+  display: none; /* 대시보드 테이블 숨김 */
 `;
 
 const StatsHeader = styled.th<{ colorHeader?: boolean; sizeHeader?: boolean; width?: string }>`
-  background-color: ${props => props.sizeHeader ? '#6ba6ed' : '#4a90e2'};
-  color: white;
-  padding: ${props => props.colorHeader ? '14px 18px' : '12px 15px'};
-  text-align: center;
-  font-weight: 600;
-  font-size: ${props => props.colorHeader ? '16px' : '14px'};
-  width: ${props => props.width || 'auto'};
-  border: 1px solid #e2e8f0;
+  display: none; /* 대시보드 헤더 숨김 */
 `;
 
 const StatsRowHeader = styled.td`
-  padding: 12px 16px;
-  font-weight: 600;
-  color: #374151;
-  font-size: 15px;
-  border: 1px solid #e2e8f0;
+  display: none; /* 대시보드 행 헤더 숨김 */
 `;
 
 const StatsCell = styled.td<{ highlighted?: boolean }>`
-  padding: 12px 15px;
-  text-align: center;
-  color: ${props => props.highlighted ? '#10b981' : '#1f2937'};
-  font-weight: ${props => props.highlighted ? '700' : '400'};
-  font-size: 15px;
-  border: 1px solid #e2e8f0;
+  display: none; /* 대시보드 셀 숨김 */
 `; 

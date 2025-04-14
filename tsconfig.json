@@ -24,7 +24,8 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "src/components/common/BorderRoundButton"
+    "src/components/common/BorderRoundButton",
+    "global.d.ts"
   ],
   "exclude": ["node_modules"]
 }

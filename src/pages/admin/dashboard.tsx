@@ -64,6 +64,29 @@ export default function AdminDashboardPage() {
     }, 0);
   };
   
+  // 색상 및 사이즈 정렬 순서 정의
+  const sizeOrder = ['S', 'M', 'L', 'XL', '2XL', '3XL'];
+  const colorOrder = ['BLACK', 'WHITE'];
+
+  // 옵션 정렬 함수
+  const sortOptions = (options: any[]) => {
+    if (!options) return [];
+    return [...options].sort((a, b) => {
+      // 우선 색상으로 정렬
+      const colorAIndex = colorOrder.indexOf(a.color);
+      const colorBIndex = colorOrder.indexOf(b.color);
+      
+      if (colorAIndex !== colorBIndex) {
+        return colorAIndex - colorBIndex;
+      }
+      
+      // 색상이 같으면 사이즈로 정렬
+      const sizeAIndex = sizeOrder.indexOf(a.size);
+      const sizeBIndex = sizeOrder.indexOf(b.size);
+      return sizeAIndex - sizeBIndex;
+    });
+  };
+
   return (
     <>
       <Head>
@@ -130,9 +153,9 @@ export default function AdminDashboardPage() {
                       <tr>
                         <StatisticsTableHeader rowSpan={2}>상태 / 옵션</StatisticsTableHeader>
                         {/* 색상별로 그룹화 */}
-                        {Array.from(new Set(orderStats.options.map((option: any) => option.color)) as Set<string>).map(color => {
-                          // 해당 색상의 사이즈 수를 계산하여 colSpan 설정
-                          const sizesCount = orderStats.options.filter((option: any) => option.color === color).length;
+                        {colorOrder.map(color => {
+                          // 해당 색상의 사이즈 수 계산
+                          const sizesCount = sizeOrder.length;
                           return (
                             <StatisticsTableHeader 
                               key={`color-${color}`}
@@ -147,21 +170,16 @@ export default function AdminDashboardPage() {
                       </tr>
                       <tr>
                         {/* 색상별 사이즈 표시 */}
-                        {Array.from(new Set(orderStats.options.map((option: any) => option.color)) as Set<string>).map(color => {
-                          // 해당 색상의 사이즈들 필터링
-                          const sizes = orderStats.options
-                            .filter((option: any) => option.color === color)
-                            .map((option: any) => option.size) as string[];
-                          
-                          return sizes.map(size => (
+                        {colorOrder.map(color => (
+                          sizeOrder.map(size => (
                             <StatisticsTableHeader 
                               key={`${color}-${size}`}
                               sizeHeader={true}
                             >
                               {size}
                             </StatisticsTableHeader>
-                          ));
-                        }).flat()}
+                          ))
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
@@ -170,18 +188,20 @@ export default function AdminDashboardPage() {
                           <StatisticsTableCell>
                             <StatusBadge status={status}>{status}</StatusBadge>
                           </StatisticsTableCell>
-                          {orderStats.options.map((option: any) => {
-                            const key = `${option.size}|${option.color}`;
-                            const value = orderStats.stats[status][key] || 0;
-                            return (
-                              <StatisticsTableCell 
-                                key={key}
-                                highlighted={false}
-                              >
-                                {value}
-                              </StatisticsTableCell>
-                            );
-                          })}
+                          {colorOrder.map(color => (
+                            sizeOrder.map(size => {
+                              const key = `${size}|${color}`;
+                              const value = orderStats.stats[status][key] || 0;
+                              return (
+                                <StatisticsTableCell 
+                                  key={key}
+                                  highlighted={false}
+                                >
+                                  {value}
+                                </StatisticsTableCell>
+                              );
+                            })
+                          ))}
                           <StatisticsTableCell highlighted={false}>
                             {calculateTotalWithoutCancelled(status)}
                           </StatisticsTableCell>
@@ -191,18 +211,20 @@ export default function AdminDashboardPage() {
                         <StatisticsTableCell>
                           <StatusBadge status="합계">유효 합계</StatusBadge>
                         </StatisticsTableCell>
-                        {orderStats.options.map((option: any) => {
-                          const key = `${option.size}|${option.color}`;
-                          const total = calculateOptionTotalWithoutCancelled(key);
-                          return (
-                            <StatisticsTableCell 
-                              key={key}
-                              highlighted={true}
-                            >
-                              {total}
-                            </StatisticsTableCell>
-                          );
-                        })}
+                        {colorOrder.map(color => (
+                          sizeOrder.map(size => {
+                            const key = `${size}|${color}`;
+                            const total = calculateOptionTotalWithoutCancelled(key);
+                            return (
+                              <StatisticsTableCell 
+                                key={key}
+                                highlighted={true}
+                              >
+                                {total}
+                              </StatisticsTableCell>
+                            );
+                          })
+                        ))}
                         <StatisticsTableCell highlighted={true}>
                           {['미입금', '입금확인중', '입금완료'].reduce((sum, status) => 
                             sum + calculateTotalWithoutCancelled(status), 0)}
@@ -249,6 +271,15 @@ export default function AdminDashboardPage() {
                     <QuickActionContent>
                       <QuickActionIcon>❓</QuickActionIcon>
                       <QuickActionText>FAQ 관리</QuickActionText>
+                    </QuickActionContent>
+                  </Link>
+                </QuickActionCard>
+                
+                <QuickActionCard>
+                  <Link href="/admin/spreadsheet">
+                    <QuickActionContent>
+                      <QuickActionIcon>📊</QuickActionIcon>
+                      <QuickActionText>스프레드시트 동기화</QuickActionText>
                     </QuickActionContent>
                   </Link>
                 </QuickActionCard>

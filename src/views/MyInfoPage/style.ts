@@ -744,6 +744,7 @@ export const ModalTitle = styled.h3`
   font-weight: 700;
   margin-bottom: 24px;
   text-align: center;
+  color: #000;
 `;
 
 export const ModalSectionTitle = styled.h4`

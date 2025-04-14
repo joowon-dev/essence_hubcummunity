@@ -21,6 +21,7 @@ interface TshirtOrder {
   status: string;
   items: TshirtOrderItem[];
   total_price?: number;
+  name: string;
 }
 
 interface TshirtOrderItem {
@@ -375,7 +376,7 @@ export default function MyInfoPage() {
               <S.InfoInputRow>
                 <S.InfoLabel>입금자명</S.InfoLabel>
                 <S.DepositorInput 
-                  value={depositorName}
+                  value={canCancel ? depositorName : order.name}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDepositorName(e.target.value)}
                   placeholder="이름+전화번호 뒷자리 (예: 홍길동1234)"
                   readOnly
@@ -516,7 +517,7 @@ export default function MyInfoPage() {
         // 1. 주문 조회
         const { data: ordersData, error: ordersError } = await supabase
           .from('orders')
-          .select('order_id, order_date, status, total_price')
+          .select('order_id, order_date, status, total_price, name')
           .eq('user_phone', phoneNumber)
           .order('order_date', { ascending: false });
 
@@ -541,6 +542,7 @@ export default function MyInfoPage() {
               order_date: order.order_date,
               status: order.status,
               total_price: order.total_price,
+              name: order.name,
               items: itemsData ? itemsData.map(item => ({
                 ...item,
                 price: item.size === '3XL' ? 11000 : 10000
@@ -878,7 +880,7 @@ export default function MyInfoPage() {
             )}
           </S.Section>
 
-          <S.FaqButton>FAQ</S.FaqButton>
+          <S.FaqButton onClick={() => router.push('/FAQ')}>FAQ</S.FaqButton>
           <S.LogoutButton onClick={logout}>로그아웃</S.LogoutButton>    
         </S.Content>
       </S.Container>
