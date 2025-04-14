@@ -1,19 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { supabase } from '@src/lib/supabase';
-import { google } from 'googleapis';
-
-// 환경 변수에서 설정 가져오기
-const SUPABASE_URL = process.env.SUPABASE_URL || "";
-const SUPABASE_KEY = process.env.SUPABASE_KEY || "";
-
-// Google Sheets API 접근을 위한 설정
-const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID || "";
-const SHEET_NAME = process.env.SHEET_NAME || "웹데이터이관용셀";
-
-// Google API 인증 정보
-const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || "";
-const PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n') : "";
-const PROJECT_ID = process.env.PROJECT_ID || "";
 
 // 사용자 인터페이스 정의
 interface UserData {
@@ -31,137 +17,79 @@ export default async function handler(
   }
 
   try {
-    // 환경 변수 확인
-    if (!SPREADSHEET_ID || !SERVICE_ACCOUNT_EMAIL || !PRIVATE_KEY || !PROJECT_ID) {
-      return res.status(500).json({ 
-        message: '환경 변수가 올바르게 설정되지 않았습니다.',
-        missingVars: {
-          spreadsheetId: !SPREADSHEET_ID,
-          serviceAccountEmail: !SERVICE_ACCOUNT_EMAIL,
-          privateKey: !PRIVATE_KEY,
-          projectId: !PROJECT_ID
-        }
+    // 클라이언트에서 전송된 필터링된 데이터 (추가 및 변경 항목만)
+    const { data } = req.body;
+    
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return res.status(400).json({ message: '동기화할 데이터가 없습니다.' });
+    }
+    
+    console.log(`클라이언트에서 전송된 데이터: ${data.length}개 항목`);
+    
+    // 데이터 유효성 검사 - phone_number 필드 확인
+    const invalidItems = data.filter(item => !item.phone_number || typeof item.phone_number !== 'string');
+    if (invalidItems.length > 0) {
+      return res.status(400).json({ 
+        message: '유효하지 않은 데이터가 포함되어 있습니다. phone_number 필드가 필요합니다.',
+        invalidCount: invalidItems.length
       });
     }
-
-    // Google Sheets API 접근을 위한 인증
-    const auth = new google.auth.JWT({
-      email: SERVICE_ACCOUNT_EMAIL,
-      key: PRIVATE_KEY,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-      projectId: PROJECT_ID
-    });
-
-    const sheets = google.sheets({ version: 'v4', auth });
-    
-    // 스프레드시트 데이터 가져오기
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A1:Z1000`, // 필요한 범위 조정
-    });
-    
-    const rows = response.data.values || [];
-    
-    if (rows.length === 0) {
-      return res.status(404).json({ message: '스프레드시트에서 데이터를 찾을 수 없습니다.' });
-    }
-    
-    // 헤더(첫 번째 행)는 컬럼명으로 사용
-    const headers = rows[0] as string[];
-    const usersMap = new Map<string, UserData>(); // 중복된 전화번호를 처리하기 위한 맵
-    
-    // phone_number 필드의 인덱스 찾기
-    const phoneNumberIndex = headers.indexOf('phone_number');
-    
-    if (phoneNumberIndex === -1) {
-      return res.status(400).json({ message: 'phone_number 필드를 찾을 수 없습니다.' });
-    }
-    
-    // 각 행을 객체로 변환 (phone_number가 비어있지 않은 경우만)
-    for (let i = 1; i < rows.length; i++) {
-      const phoneNumber = rows[i][phoneNumberIndex];
-      
-      if (phoneNumber && phoneNumber.toString().trim() !== '') {
-        const user: UserData = { phone_number: phoneNumber.toString().trim() };
-        let hasError = false;
-        
-        for (let j = 0; j < headers.length; j++) {
-          // #VALUE! 오류 확인
-          if (rows[i][j] && rows[i][j].toString().includes('#VALUE!')) {
-            hasError = true;
-            break;
-          }
-          
-          // 헤더 이름과 값 매핑
-          const headerName = headers[j];
-          
-          // boolean 타입 필드인 경우 적절히 변환
-          if (typeof rows[i][j] === 'string' && (rows[i][j] === 'true' || rows[i][j] === 'false')) {
-            user[headerName] = rows[i][j] === 'true';
-          } else if (!rows[i][j] || rows[i][j] === '') {
-            // 빈 문자열은 null로 처리
-            user[headerName] = null;
-          } else {
-            user[headerName] = rows[i][j];
-          }
-        }
-        
-        if (!hasError) {
-          // 중복된 phone_number가 있는 경우, 이전 데이터를 덮어씁니다 (가장 마지막 행 우선)
-          usersMap.set(user.phone_number, user);
-        }
-      }
-    }
-    
-    // Map에서 최종 사용자 배열 생성
-    const users = Array.from(usersMap.values());
     
     // 동기화 결과 저장
     let successCount = 0;
     let failCount = 0;
     
-    // 처리할 사용자가 없는 경우
-    if (users.length === 0) {
-      return res.status(200).json({
-        totalProcessed: 0,
-        successCount: 0,
-        failCount: 0,
-        lastSyncTime: new Date().toISOString(),
-        message: 'phone_number 필드가 있는 행이 없습니다.'
-      });
+    // 데이터를 더 작은 배치로 나누어 처리하여 타임아웃 방지
+    const batchSize = 20; // 한 번에 처리할 최대 항목 수
+    const batches = [];
+    
+    for (let i = 0; i < data.length; i += batchSize) {
+      batches.push(data.slice(i, i + batchSize));
     }
     
-    // Supabase에 데이터 전송
-    for (const user of users) {
-      try {
-        // Supabase에 사용자 추가 또는 업데이트
-        const { error } = await supabase
-          .from('users')
-          .upsert([user], {
-            onConflict: 'phone_number', // phone_number를 기준으로 충돌 처리
-            ignoreDuplicates: false // 중복 무시하지 않고 업데이트
-          });
-        
-        if (error) {
-          console.error('사용자 업데이트 오류:', error);
+    console.log(`총 ${batches.length}개의 배치로 처리합니다.`);
+    
+    // 각 배치 처리
+    for (let i = 0; i < batches.length; i++) {
+      const batch = batches[i];
+      console.log(`배치 ${i + 1}/${batches.length} 처리 중... (${batch.length}개 항목)`);
+      
+      // 배치 내 항목 처리
+      for (const user of batch) {
+        try {
+          // phone_number가 비어있는 경우 건너뛰기
+          if (!user.phone_number || user.phone_number.trim() === '') {
+            console.warn('phone_number가 없는 항목 무시');
+            continue;
+          }
+          
+          // Supabase에 사용자 추가 또는 업데이트
+          const { error } = await supabase
+            .from('users')
+            .upsert([user], {
+              onConflict: 'phone_number', // phone_number를 기준으로 충돌 처리
+              ignoreDuplicates: false // 중복 무시하지 않고 업데이트
+            });
+          
+          if (error) {
+            console.error('사용자 업데이트 오류:', error);
+            failCount++;
+          } else {
+            successCount++;
+          }
+        } catch (error) {
+          console.error('사용자 처리 중 예외 발생:', error);
           failCount++;
-        } else {
-          successCount++;
         }
-      } catch (error) {
-        console.error('사용자 처리 중 예외 발생:', error);
-        failCount++;
       }
     }
     
     // 결과 반환
     return res.status(200).json({
-      totalProcessed: users.length,
+      totalProcessed: data.length,
       successCount,
       failCount,
-      lastSyncTime: new Date().toISOString(),
-      // 원본 데이터를 클라이언트로 보냄
-      users: users
+      lastSyncTime: new Date().toISOString()
     });
   } catch (error: any) {
     console.error('동기화 중 오류 발생:', error);

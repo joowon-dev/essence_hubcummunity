@@ -253,10 +253,17 @@ export default function SpreadsheetSyncPage() {
         return;
       }
       
+      console.log(`동기화할 데이터: ${dataToSync.length}개 항목`);
+      
       try {
-        // 변경된 API 호출 방식: 필터링된 데이터만 전송
+        // 변경된 API 호출 방식: 필터링된 데이터만 전송 + 타임아웃 설정
         const response = await axios.post('/api/admin/spreadsheet/sync', {
           data: dataToSync
+        }, {
+          timeout: 300000, // 5분 타임아웃
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
         
         setSyncResult({
@@ -265,8 +272,25 @@ export default function SpreadsheetSyncPage() {
           failCount: response.data.failCount || 0,
           lastSyncTime: response.data.lastSyncTime || new Date().toISOString()
         });
-      } catch (syncError) {
+        
+        message.success('변경 및 추가 항목이 성공적으로 동기화되었습니다.');
+      } catch (syncError: any) {
         console.error('동기화 API 호출 오류:', syncError);
+        
+        // 상세 에러 정보 출력
+        if (syncError.response) {
+          console.error('서버 응답:', syncError.response.data);
+          console.error('상태 코드:', syncError.response.status);
+        } else if (syncError.request) {
+          console.error('요청 정보:', syncError.request);
+          console.error('타임아웃 여부:', syncError.code === 'ECONNABORTED');
+        }
+        
+        // 에러 메시지 표시
+        const errorMessage = syncError.response?.data?.message || syncError.message;
+        setError(`동기화 중 오류가 발생했습니다: ${errorMessage}`);
+        message.error(`동기화 실패: ${errorMessage}`);
+        
         // API 호출 실패 시 테스트 동기화 결과 사용
         setSyncResult({
           totalProcessed: syncSummary.newItems + syncSummary.modifiedItems,
@@ -278,7 +302,6 @@ export default function SpreadsheetSyncPage() {
       
       // 동기화 완료 후 데이터 새로고침
       await fetchSpreadsheetData(true);
-      message.success('변경 및 추가 항목이 성공적으로 동기화되었습니다.');
       setConfirmModalVisible(false);
     } catch (err: any) {
       console.error('동기화 오류:', err);
