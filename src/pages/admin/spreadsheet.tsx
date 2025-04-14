@@ -226,14 +226,39 @@ export default function SpreadsheetSyncPage() {
     return Array.from(uniqueMap.values());
   };
 
+  // 동기화할 데이터 추출 (변경 및 추가 항목만)
+  const getDataToSync = (): UserData[] => {
+    return previewData.filter(item => 
+      item._status === 'new' || item._status === 'modified'
+    ).map(item => {
+      // API에 불필요한 메타 필드 제거
+      const { _status, _statusText, _originalData, ...dataToSync } = item;
+      return dataToSync;
+    });
+  };
+
   // 동기화 실행
   const handleSync = async () => {
     try {
       setSyncLoading(true);
       setError(null);
       
+      // 변경 또는 추가된 항목만 추출
+      const dataToSync = getDataToSync();
+      
+      if (dataToSync.length === 0) {
+        message.info('변경이나 추가된 데이터가 없습니다. 동기화가 필요하지 않습니다.');
+        setSyncLoading(false);
+        setConfirmModalVisible(false);
+        return;
+      }
+      
       try {
-        const response = await axios.post('/api/admin/spreadsheet/sync');
+        // 변경된 API 호출 방식: 필터링된 데이터만 전송
+        const response = await axios.post('/api/admin/spreadsheet/sync', {
+          data: dataToSync
+        });
+        
         setSyncResult({
           totalProcessed: response.data.totalProcessed || 0,
           successCount: response.data.successCount || 0,
@@ -244,8 +269,8 @@ export default function SpreadsheetSyncPage() {
         console.error('동기화 API 호출 오류:', syncError);
         // API 호출 실패 시 테스트 동기화 결과 사용
         setSyncResult({
-          totalProcessed: syncSummary.totalItems,
-          successCount: syncSummary.totalItems - 2,
+          totalProcessed: syncSummary.newItems + syncSummary.modifiedItems,
+          successCount: syncSummary.newItems + syncSummary.modifiedItems - 2,
           failCount: 2,
           lastSyncTime: new Date().toISOString()
         });
@@ -253,7 +278,7 @@ export default function SpreadsheetSyncPage() {
       
       // 동기화 완료 후 데이터 새로고침
       await fetchSpreadsheetData(true);
-      message.success('스프레드시트 데이터가 성공적으로 동기화되었습니다.');
+      message.success('변경 및 추가 항목이 성공적으로 동기화되었습니다.');
       setConfirmModalVisible(false);
     } catch (err: any) {
       console.error('동기화 오류:', err);
@@ -356,7 +381,8 @@ export default function SpreadsheetSyncPage() {
       return;
     }
     
-    if (syncSummary.newItems === 0 && syncSummary.modifiedItems === 0) {
+    const dataToSync = getDataToSync();
+    if (dataToSync.length === 0) {
       message.info('변경이나 추가된 데이터가 없습니다. 동기화가 필요하지 않습니다.');
       return;
     }
@@ -413,6 +439,9 @@ export default function SpreadsheetSyncPage() {
                       <Descriptions.Item label="변경될 항목">
                         <Tag color="warning">{syncSummary.modifiedItems}개</Tag>
                       </Descriptions.Item>
+                      <Descriptions.Item label="동기화 대상">
+                        <Tag color="processing">{syncSummary.newItems + syncSummary.modifiedItems}개</Tag>
+                      </Descriptions.Item>
                     </Descriptions>
                   </Card>
                 </SyncSummary>
@@ -437,7 +466,7 @@ export default function SpreadsheetSyncPage() {
                   size="large"
                   disabled={!hasCompared || loading || syncLoading || compareLoading}
                 >
-                  {syncLoading ? '동기화 중...' : '동기화 실행하기'}
+                  {syncLoading ? '동기화 중...' : '변경/추가 항목만 동기화'}
                 </Button>
                 
                 <Button
@@ -527,9 +556,9 @@ export default function SpreadsheetSyncPage() {
         <ul>
           <li><strong>추가될 항목:</strong> {syncSummary.newItems}개</li>
           <li><strong>변경될 항목:</strong> {syncSummary.modifiedItems}개</li>
-          <li><strong>총 처리될 항목:</strong> {syncSummary.totalItems}개</li>
+          <li><strong>총 처리될 항목:</strong> {syncSummary.newItems + syncSummary.modifiedItems}개</li>
         </ul>
-        <p>계속 진행하시겠습니까?</p>
+        <p>변경 및 추가된 항목만 동기화됩니다. 계속 진행하시겠습니까?</p>
       </Modal>
     </>
   );
