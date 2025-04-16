@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import styled from '@emotion/styled';
 import Link from 'next/link';
 import { useAdminAuthStore } from '@src/store/adminAuth';
+import { usePageTransition } from '@src/hooks/usePageTransition';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -13,6 +14,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
   const router = useRouter();
   const { isAuthenticated, isAdmin, checkSessionExpiry, logout } = useAdminAuthStore();
   const [isClient, setIsClient] = useState(false);
+  const { navigateTo } = usePageTransition();
   
   useEffect(() => {
     setIsClient(true);
@@ -27,9 +29,18 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
     logout();
     router.push('/admin');
   };
+
+  const handleNavigate = (href: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    navigateTo(href);
+  };
   
   if (!isClient || !isAuthenticated || !isAdmin) {
-    return null; // 클라이언트 측 렌더링 전이거나 인증되지 않은 경우 아무것도 표시하지 않음
+    return (
+      <LoadingContainer>
+        <LoadingText>로그인 확인 중...</LoadingText>
+      </LoadingContainer>
+    );
   }
   
   return (
@@ -38,22 +49,39 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
         <Logo>HUB ADMIN</Logo>
         <Nav>
           <NavItem isActive={router.pathname === '/admin/dashboard'}>
-            <Link href="/admin/dashboard">대시보드</Link>
+            <Link href="/admin/dashboard" onClick={(e) => handleNavigate('/admin/dashboard', e)}>
+              대시보드
+            </Link>
           </NavItem>
           <NavItem isActive={router.pathname === '/admin/tshirtsorder'}>
-            <Link href="/admin/tshirtsorder">티셔츠 주문 관리</Link>
+            <Link href="/admin/tshirtsorder" onClick={(e) => handleNavigate('/admin/tshirtsorder', e)}>
+              티셔츠 주문 관리
+            </Link>
           </NavItem>
           <NavItem isActive={router.pathname === '/admin/inquiries'}>
-            <Link href="/admin/inquiries">문의사항 관리</Link>
+            <Link href="/admin/inquiries" onClick={(e) => handleNavigate('/admin/inquiries', e)}>
+              문의사항 관리
+            </Link>
           </NavItem>
           <NavItem isActive={router.pathname === '/admin/schedules'}>
-            <Link href="/admin/schedules">스케줄 관리</Link>
+            <Link href="/admin/schedules" onClick={(e) => handleNavigate('/admin/schedules', e)}>
+              스케줄 관리
+            </Link>
+          </NavItem>
+          <NavItem isActive={router.pathname === '/admin/meals'}>
+            <Link href="/admin/meals" onClick={(e) => handleNavigate('/admin/meals', e)}>
+              식단표 관리
+            </Link>
           </NavItem>
           <NavItem isActive={router.pathname === '/admin/faqs'}>
-            <Link href="/admin/faqs">FAQ 관리</Link>
+            <Link href="/admin/faqs" onClick={(e) => handleNavigate('/admin/faqs', e)}>
+              FAQ 관리
+            </Link>
           </NavItem>
           <NavItem isActive={router.pathname === '/admin/spreadsheet'}>
-            <Link href="/admin/spreadsheet">스프레드시트 동기화</Link>
+            <Link href="/admin/spreadsheet" onClick={(e) => handleNavigate('/admin/spreadsheet', e)}>
+              스프레드시트 동기화
+            </Link>
           </NavItem>
         </Nav>
         <LogoutButton onClick={handleLogout}>로그아웃</LogoutButton>
@@ -152,4 +180,17 @@ const Title = styled.h1`
 
 const Main = styled.main`
   padding: 24px;
+`;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100%;
+`;
+
+const LoadingText = styled.div`
+  font-size: 18px;
+  color: #333;
 `; 

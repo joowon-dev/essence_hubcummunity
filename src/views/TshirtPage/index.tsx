@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@src/lib/supabase';
 import * as S from './style';
 import PageLayout from '@src/components/common/PageLayout';
 import OrderSheet from './components/OrderSheet';
 import ImageSlider from './components/ImageSlider';
 import { useRouter } from 'next/router';
+import { useQuery } from '@tanstack/react-query';
 
 interface TshirtData {
   id: number;
@@ -44,39 +45,24 @@ interface OrderSheetItem {
   price: number;
 }
 
+// 가격 정보는 컴포넌트 외부에 상수로 정의하여 불필요한 재생성 방지
+const PRICE_INFO: PriceInfo = {
+  basePrice: 10000,
+  bulkDiscountAmount: 1000,
+  bulkDiscountMinQuantity: 2,
+  specialSizePrice: [
+    { size: '3XL', price: 11000 }
+  ]
+};
+
 export default function TshirtPage() {
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
-  const [tshirt, setTshirt] = useState<TshirtData | null>(null);
-  const [options, setOptions] = useState<TshirtOption[]>([]);
-  const [orderSheets, setOrderSheets] = useState<OrderSheetItem[]>([]);
   const [isOrderSheetOpen, setIsOrderSheetOpen] = useState(false);
-  const [deadlineInfo, setDeadlineInfo] = useState<DeadlineInfo | null>(null);
   const router = useRouter();
 
-  const priceInfo: PriceInfo = {
-    basePrice: 10000,
-    bulkDiscountAmount: 1000,
-    bulkDiscountMinQuantity: 2,
-    specialSizePrice: [
-      { size: '3XL', price: 11000 }
-    ]
-  };
-
-  // 컴포넌트 마운트 시 로컬스토리지에서 주문 시트 상태 확인
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const shouldOpenOrderSheet = localStorage.getItem('open_order_sheet') === 'true';
-      if (shouldOpenOrderSheet) {
-        // 주문 시트를 열고 플래그 제거
-        setIsOrderSheetOpen(true);
-        localStorage.removeItem('open_order_sheet');
-      }
-    }
-  }, []);
-
-  // YYYYMMDD 형식의 문자열을 Date 객체로 변환하는 함수
-  const parseDateFromString = (dateString: string) => {
+  // YYYYMMDD 형식의 문자열을 Date 객체로 변환하는 함수 (메모이제이션)
+  const parseDateFromString = useCallback((dateString: string) => {
     if (dateString.length !== 8) return null;
     
     const year = parseInt(dateString.substring(0, 4));
@@ -84,10 +70,10 @@ export default function TshirtPage() {
     const day = parseInt(dateString.substring(6, 8));
     
     return new Date(year, month, day);
-  };
+  }, []);
 
-  // 남은 날짜 계산 및 표시 형식 생성 함수
-  const formatDeadline = (dateString: string, dayInfo?: string): DeadlineInfo => {
+  // 남은 날짜 계산 및 표시 형식 생성 함수 (메모이제이션)
+  const formatDeadline = useCallback((dateString: string, dayInfo?: string): DeadlineInfo => {
     const deadlineDate = parseDateFromString(dateString);
     
     if (!deadlineDate) {
@@ -119,77 +105,120 @@ export default function TshirtPage() {
       display: displayText,
       rawDate: dateString
     };
-  };
+  }, [parseDateFromString]);
 
+  // React Query를 사용한 데이터 페칭
+  const { data: tshirtData, isLoading: isTshirtLoading } = useQuery({
+    queryKey: ['tshirt'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tshirts')
+        .select('*')
+        .single();
+      
+      if (error) throw error;
+      return data as TshirtData;
+    },
+    staleTime: 5 * 60 * 1000, // 5분 동안 데이터를 신선하게 유지
+  });
+
+  // 옵션 데이터 페칭
+  const { data: options = [], isLoading: isOptionsLoading } = useQuery({
+    queryKey: ['tshirtOptions', tshirtData?.id],
+    queryFn: async () => {
+      if (!tshirtData?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('tshirt_options')
+        .select('*')
+        .eq('tshirt_id', tshirtData.id);
+      
+      if (error) throw error;
+      
+      // 옵션별 가격 설정
+      return data.map(option => ({
+        ...option,
+        price: option.size === '3XL' ? PRICE_INFO.specialSizePrice[0].price : PRICE_INFO.basePrice
+      })) as TshirtOption[];
+    },
+    enabled: !!tshirtData?.id, // tshirtData가 있을 때만 실행
+    staleTime: 5 * 60 * 1000, // 5분 동안 데이터를 신선하게 유지
+  });
+
+  // 마감일 정보 페칭
+  const { data: deadlineInfo, isLoading: isDeadlineLoading } = useQuery({
+    queryKey: ['deadline'],
+    queryFn: async () => {
+      // 스케줄에서 티셔츠 예약 마감일 가져오기
+      const { data, error } = await supabase
+        .from('schedules')
+        .select('title, day, end_time')
+        .eq('title', '티셔츠 예약 마감')
+        .single();
+      
+      if (!error && data) {
+        // end_time으로 남은 날짜 계산하고, day 값을 괄호 안에 표시
+        return formatDeadline(data.end_time, data.day);
+      } else if (tshirtData) {
+        return formatDeadline(tshirtData.deadline);
+      }
+      
+      return null;
+    },
+    enabled: !!tshirtData, // tshirtData가 있을 때만 실행
+    staleTime: 5 * 60 * 1000, // 5분 동안 데이터를 신선하게 유지
+  });
+
+  // 컴포넌트 마운트 시 로컬스토리지에서 주문 시트 상태 확인
   useEffect(() => {
-    async function fetchTshirtData() {
-      try {
-        const { data: tshirtData, error: tshirtError } = await supabase
-          .from('tshirts')
-          .select('*')
-          .single();
-
-        if (tshirtError) throw tshirtError;
-        setTshirt(tshirtData);
-
-        // 스케줄에서 티셔츠 예약 마감일 가져오기
-        const { data: scheduleData, error: scheduleError } = await supabase
-          .from('schedules')
-          .select('title, day, end_time')
-          .eq('title', '티셔츠 예약 마감')
-          .single();
-        
-        if (!scheduleError && scheduleData) {
-          // end_time으로 남은 날짜 계산하고, day 값을 괄호 안에 표시
-          setDeadlineInfo(formatDeadline(scheduleData.end_time, scheduleData.day));
-        } else {
-          setDeadlineInfo(formatDeadline(tshirtData.deadline));
-        }
-
-        const { data: optionsData, error: optionsError } = await supabase
-          .from('tshirt_options')
-          .select('*')
-          .eq('tshirt_id', tshirtData.id);
-
-        if (optionsError) throw optionsError;
-        
-        // 옵션별 가격 설정
-        const optionsWithPrice = optionsData.map(option => ({
-          ...option,
-          price: option.size === '3XL' ? priceInfo.specialSizePrice[0].price : priceInfo.basePrice
-        }));
-        
-        setOptions(optionsWithPrice);
-      } catch (error) {
-        console.error('Error fetching tshirt data:', error);
+    if (typeof window !== 'undefined') {
+      const shouldOpenOrderSheet = localStorage.getItem('open_order_sheet') === 'true';
+      if (shouldOpenOrderSheet) {
+        // 주문 시트를 열고 플래그 제거
+        setIsOrderSheetOpen(true);
+        localStorage.removeItem('open_order_sheet');
       }
     }
-
-    fetchTshirtData();
   }, []);
 
-  // Order Sheet를 열어주는 함수
-  const handleOrder = () => {
+  // Order Sheet를 열어주는 함수 (메모이제이션)
+  const handleOrder = useCallback(() => {
     setIsOrderSheetOpen(true);
-  };
+  }, []);
 
-  // 폼 유효성 검사
-  const isValidForm = () => {
-    // 여기에 필요한 유효성 검사 로직 추가
-    return true;
-  };
+  // Order Sheet를 닫는 함수 (메모이제이션)
+  const handleCloseOrderSheet = useCallback(() => {
+    setIsOrderSheetOpen(false);
+  }, []);
 
-  // 주문 생성 함수
-  const createOrder = async () => {
-    try {
-      // 여기에 주문 생성 로직 추가
-      console.log('주문 생성 로직');
-    } catch (error) {
-      console.error('주문 생성 실패:', error);
-    }
-  };
+  // 로딩 상태 (메모이제이션)
+  const isLoading = useMemo(() => 
+    isTshirtLoading || isOptionsLoading || isDeadlineLoading,
+  [isTshirtLoading, isOptionsLoading, isDeadlineLoading]);
 
-  if (!tshirt) return <div>로딩 중...</div>;
+  if (isLoading) {
+    return (
+      <PageLayout>
+        <S.LoadingContainer>
+          <S.LoadingSpinner />
+          <S.LoadingText>티셔츠 정보를 불러오는 중...</S.LoadingText>
+        </S.LoadingContainer>
+      </PageLayout>
+    );
+  }
+
+  if (!tshirtData) {
+    return (
+      <PageLayout>
+        <S.ErrorContainer>
+          <S.ErrorText>티셔츠 정보를 불러올 수 없습니다.</S.ErrorText>
+          <S.RetryButton onClick={() => window.location.reload()}>
+            다시 시도
+          </S.RetryButton>
+        </S.ErrorContainer>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout>
@@ -198,18 +227,18 @@ export default function TshirtPage() {
           <ImageSlider />
 
           <S.InfoSection>
-            <S.ProductTitle>{tshirt.name}</S.ProductTitle>
-            <S.Deadline>{deadlineInfo?.display || tshirt.deadline}</S.Deadline>
-            <S.Price>{priceInfo.basePrice.toLocaleString()}원~</S.Price>
+            <S.ProductTitle>{tshirtData.name}</S.ProductTitle>
+            <S.Deadline>{deadlineInfo?.display || tshirtData.deadline}</S.Deadline>
+            <S.Price>{PRICE_INFO.basePrice.toLocaleString()}원~</S.Price>
             <S.Notice>
-              ⭐️ 2장 이상 구매시 장당 {priceInfo.bulkDiscountAmount.toLocaleString()}원 할인<br/>
-              ⭐️ 3XL 사이즈는 {priceInfo.specialSizePrice[0].price.toLocaleString()}원<br/>
+              ⭐️ 2장 이상 구매시 장당 {PRICE_INFO.bulkDiscountAmount.toLocaleString()}원 할인<br/>
+              ⭐️ 3XL 사이즈는 {PRICE_INFO.specialSizePrice[0].price.toLocaleString()}원<br/>
               📞 4XL 이상 사이즈 및 기타 문의:  <br/><S.Link href="https://open.kakao.com/o/scWel1ph" target="_blank" rel="noopener noreferrer">https://open.kakao.com/o/scWel1ph</S.Link>
             </S.Notice>
 
             <S.SizeGuide>
               <S.SizeGuideTitle>사이즈 가이드</S.SizeGuideTitle>
-              <S.SizeGuideContent>기쁨홀 안내데스크 옆에서 실제 티셔츠 사이즈를 확인해보세요!</S.SizeGuideContent>
+              <S.SizeGuideContent>기쁨홀 안내데스크 옆에서 실제 티셔츠 사이즈를 확인해보세요! <br/> ⚠️정사이즈핏으로 여유 있는 사이즈 선택 추천드립니다.</S.SizeGuideContent>
               <S.Table>
                 <thead>
                   <tr>
@@ -250,16 +279,16 @@ export default function TshirtPage() {
             </S.ButtonGroup>
           </S.InfoSection>
         </S.Content>
-
-        {isOrderSheetOpen && tshirt && (
-          <OrderSheet
-            tshirtId={tshirt.id}
-            options={options}
-            priceInfo={priceInfo}
-            onClose={() => setIsOrderSheetOpen(false)}
-          />
-        )}
       </S.Container>
+
+      {isOrderSheetOpen && (
+        <OrderSheet 
+          tshirtId={tshirtData.id}
+          options={options}
+          priceInfo={PRICE_INFO}
+          onClose={handleCloseOrderSheet}
+        />
+      )}
     </PageLayout>
   );
 } 

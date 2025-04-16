@@ -7,6 +7,7 @@ import { imgLogoHub } from "@src/assets/mainLogo";
 import { useRouter } from "next/router";
 import * as S from "./style";
 import { MenuState } from "./types";
+import { useLoading } from "@src/contexts/LoadingContext";
 
 export function Header() {
   const pathname = usePathname();
@@ -15,6 +16,7 @@ export function Header() {
   const isTablet = useIsTablet("48rem", "58.6875rem");
   const isMobile = useIsMobile();
   const router = useRouter();
+  const { startLoading } = useLoading();
 
   const [opacity, setOpacity] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -47,10 +49,20 @@ export function Header() {
     setIsMenuOpen(state === "open");
   };
 
+  // 로고 클릭 핸들러
+  const handleLogoClick = () => {
+    if (pathname !== "/") {
+      startLoading();
+      setTimeout(() => {
+        router.push("/");
+      }, 100);
+    }
+  };
+
   return (
     <S.Wrapper opacity={isRootPath ? opacity : 1} isMenuOpen={isMenuOpen}>
       <Logo
-        onClick={() => router.push("/")}
+        onClick={handleLogoClick}
         opacity={isRootPath ? opacity : 1}
       />
 

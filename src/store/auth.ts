@@ -32,7 +32,7 @@ export const useAuthStore = create<AuthStore>()(
       setUser: (phoneNumber) => {
         if (phoneNumber) {
           // 로그인 시 세션 만료 시간 설정 (현재 시간 + 24시간)
-          const expiryTime = Date.now() + 24 * 60 * 60 * 1000; // 24시간으로 연장
+          const expiryTime = Date.now() + 1 * 10 * 60 * 1000; // 24시간으로 연장
           set({ phoneNumber, isAuthenticated: true, sessionExpiry: expiryTime });
           
           // 직접 로컬 스토리지에도 저장 (이중 보장)

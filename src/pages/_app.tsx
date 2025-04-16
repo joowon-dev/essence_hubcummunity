@@ -13,6 +13,8 @@ import { useAuthStore, initializeAuthState } from "@src/store/auth";
 import { useRouter } from 'next/router';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { LoadingProvider, useLoading } from "@src/contexts/LoadingContext";
+import LoadingScreen from "@src/components/common/LoadingScreen";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,6 +36,7 @@ const isServer = typeof window === 'undefined';
 function SessionManager({ children }: { children: React.ReactNode }) {
   const { checkSessionExpiry } = useAuthStore();
   const router = useRouter();
+  const { startLoading, stopLoading } = useLoading();
   
   // 상태 확인 함수를 메모이제이션
   const memoizedCheckSession = useCallback(() => {
@@ -78,14 +81,27 @@ function SessionManager({ children }: { children: React.ReactNode }) {
     }
   }, [memoizedCheckSession]);
 
-  // 라우팅 변경 감지
+  // 라우팅 변경 감지 및 로딩 처리
   useEffect(() => {
-    // 페이지 변경 시마다 세션 확인
-    const handleRouteChange = () => {
+    // 페이지 변경 시작 시 로딩 표시
+    const handleRouteChangeStart = () => {
+      startLoading();
+    };
+    
+    // 페이지 변경 완료 시 로딩 숨김
+    const handleRouteChangeComplete = () => {
       memoizedCheckSession();
+      stopLoading();
+    };
+    
+    // 페이지 변경 오류 시 로딩 숨김
+    const handleRouteChangeError = () => {
+      stopLoading();
     };
 
-    router.events.on('routeChangeComplete', handleRouteChange);
+    router.events.on('routeChangeStart', handleRouteChangeStart);
+    router.events.on('routeChangeComplete', handleRouteChangeComplete);
+    router.events.on('routeChangeError', handleRouteChangeError);
     
     // 정기적으로 세션 확인 (5분마다)
     const interval = setInterval(() => {
@@ -93,10 +109,12 @@ function SessionManager({ children }: { children: React.ReactNode }) {
     }, 5 * 60 * 1000);
 
     return () => {
-      router.events.off('routeChangeComplete', handleRouteChange);
+      router.events.off('routeChangeStart', handleRouteChangeStart);
+      router.events.off('routeChangeComplete', handleRouteChangeComplete);
+      router.events.off('routeChangeError', handleRouteChangeError);
       clearInterval(interval);
     };
-  }, [memoizedCheckSession, router]);
+  }, [memoizedCheckSession, router, startLoading, stopLoading]);
 
   return <>{children}</>;
 }
@@ -137,11 +155,14 @@ function MyApp({ Component, pageProps }: AppProps) {
       <Global styles={global} />
       <QueryClientProvider client={queryClient}>
         <MotionConfig isValidProp={isValidProp}>
-          <SessionManager>
-            <Component {...pageProps} />
-            <Analytics />
-            <SpeedInsights />
-          </SessionManager>
+          <LoadingProvider>
+            <LoadingScreen />
+            <SessionManager>
+              <Component {...pageProps} />
+              <Analytics />
+              <SpeedInsights />
+            </SessionManager>
+          </LoadingProvider>
         </MotionConfig>
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>

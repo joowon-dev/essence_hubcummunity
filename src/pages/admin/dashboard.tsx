@@ -4,6 +4,7 @@ import AdminLayout from '@src/components/AdminLayout';
 import { getOrderStatusStats, getTshirtOrderStats } from '@src/lib/api/admin';
 import Head from 'next/head';
 import Link from 'next/link';
+import { usePageTransition } from '@src/hooks/usePageTransition';
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<Record<string, number>>({
@@ -15,6 +16,7 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [orderStats, setOrderStats] = useState<any>(null);
   const [statsLoading, setStatsLoading] = useState(true);
+  const { navigateTo } = usePageTransition();
   
   useEffect(() => {
     const loadStats = async () => {
@@ -85,6 +87,11 @@ export default function AdminDashboardPage() {
       const sizeBIndex = sizeOrder.indexOf(b.size);
       return sizeAIndex - sizeBIndex;
     });
+  };
+
+  const handleNavigate = (href: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    navigateTo(href);
   };
 
   return (
@@ -240,48 +247,57 @@ export default function AdminDashboardPage() {
               <QuickActionTitle>바로가기</QuickActionTitle>
               <QuickActionGrid>
                 <QuickActionCard>
-                  <Link href="/admin/tshirtsorder">
+                  <a href="/admin/tshirtsorder" onClick={(e) => handleNavigate('/admin/tshirtsorder', e)}>
                     <QuickActionContent>
                       <QuickActionIcon>📦</QuickActionIcon>
                       <QuickActionText>티셔츠 주문 관리</QuickActionText>
                     </QuickActionContent>
-                  </Link>
+                  </a>
                 </QuickActionCard>
                 
                 <QuickActionCard>
-                  <Link href="/admin/inquiries">
+                  <a href="/admin/schedules" onClick={(e) => handleNavigate('/admin/schedules', e)}>
+                    <QuickActionContent>
+                      <QuickActionIcon>📅</QuickActionIcon>
+                      <QuickActionText>스케줄 관리</QuickActionText>
+                    </QuickActionContent>
+                  </a>
+                </QuickActionCard>
+                
+                <QuickActionCard>
+                  <a href="/admin/meals" onClick={(e) => handleNavigate('/admin/meals', e)}>
+                    <QuickActionContent>
+                      <QuickActionIcon>🍲</QuickActionIcon>
+                      <QuickActionText>식단표 관리</QuickActionText>
+                    </QuickActionContent>
+                  </a>
+                </QuickActionCard>
+                
+                <QuickActionCard>
+                  <a href="/admin/inquiries" onClick={(e) => handleNavigate('/admin/inquiries', e)}>
                     <QuickActionContent>
                       <QuickActionIcon>📝</QuickActionIcon>
                       <QuickActionText>문의사항 관리</QuickActionText>
                     </QuickActionContent>
-                  </Link>
-                </QuickActionCard>
-
-                <QuickActionCard>
-                  <Link href="/admin/schedules">
-                    <QuickActionContent>
-                      <QuickActionIcon>🗓️</QuickActionIcon>
-                      <QuickActionText>스케줄 관리</QuickActionText>
-                    </QuickActionContent>
-                  </Link>
+                  </a>
                 </QuickActionCard>
                 
                 <QuickActionCard>
-                  <Link href="/admin/faqs">
+                  <a href="/admin/faqs" onClick={(e) => handleNavigate('/admin/faqs', e)}>
                     <QuickActionContent>
                       <QuickActionIcon>❓</QuickActionIcon>
                       <QuickActionText>FAQ 관리</QuickActionText>
                     </QuickActionContent>
-                  </Link>
+                  </a>
                 </QuickActionCard>
                 
                 <QuickActionCard>
-                  <Link href="/admin/spreadsheet">
+                  <a href="/admin/spreadsheet" onClick={(e) => handleNavigate('/admin/spreadsheet', e)}>
                     <QuickActionContent>
                       <QuickActionIcon>📊</QuickActionIcon>
                       <QuickActionText>스프레드시트 동기화</QuickActionText>
                     </QuickActionContent>
-                  </Link>
+                  </a>
                 </QuickActionCard>
               </QuickActionGrid>
             </QuickActionsContainer>

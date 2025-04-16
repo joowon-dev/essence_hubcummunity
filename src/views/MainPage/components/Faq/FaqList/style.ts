@@ -1,4 +1,5 @@
 import styled from "@emotion/styled";
+import { keyframes } from "@emotion/react";
 
 export const Ul = styled.ul`
   width: 100%;
@@ -38,6 +39,33 @@ export const NoData = styled.div`
   padding: 20px;
   color: #777;
   font-size: 16px;
+`;
+
+// 로딩 애니메이션을 위한 키프레임
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
+
+// 로딩 컨테이너
+export const LoadingContainer = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  gap: 16px;
+`;
+
+// 로딩 스피너
+export const LoadingSpinner = styled.div`
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top: 4px solid #333;
+  animation: ${spin} 1s linear infinite;
 `;
 
 export const ViewAllButton = styled.div`

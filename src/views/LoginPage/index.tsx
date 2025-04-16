@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@src/lib/supabase';
 import { useRouter } from 'next/router';
 import { useAuthStore } from '@src/store/auth';
+import { useLoading } from '@src/contexts/LoadingContext';
 
 // 리다이렉션 관련 로컬스토리지 키
 const REDIRECT_KEY = 'login_redirect';
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [redirectPath, setRedirectPath] = useState('/myinfo'); // 기본값은 마이페이지
+  const { startLoading, stopLoading } = useLoading();
 
   // 뒤로가기 버튼 처리
   const handleGoBack = () => {
@@ -29,13 +31,11 @@ export default function LoginPage() {
       // URL에서 리다이렉션 경로가 제공된 경우, 로컬 스토리지에 저장
       localStorage.setItem(REDIRECT_KEY, redirect);
       setRedirectPath(redirect);
-      console.log('URL에서 리다이렉션 경로 설정:', redirect);
     } else {
       // URL에 없는 경우 로컬 스토리지 확인
       const savedPath = localStorage.getItem(REDIRECT_KEY);
       if (savedPath) {
         setRedirectPath(savedPath);
-        console.log('로컬스토리지에서 리다이렉션 경로 읽음:', savedPath);
       }
     }
   }, [router.query]);
@@ -68,46 +68,73 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    startLoading();
 
     try {
+      let userData = null;
+      let userType = '';
+      
       // 1. 일반 회원 확인
       let { data, error } = await supabase
         .from('users')
-        .select('phone_number')
+        .select('phone_number, visit_count')
         .eq('phone_number', phoneNumber)
         .eq('password', password)
         .single();
+
+      if (!error && data) {
+        userData = data;
+        userType = 'users';
+      }
 
       // 2. 티셔츠 회원 확인
       if (error) {
         const { data: tshirtUserData, error: tshirtUserError } = await supabase
           .from('tshirt_users')
-          .select('phone_number')
+          .select('phone_number, visit_count')
           .eq('phone_number', phoneNumber)
           .eq('password', password)
           .single();
         
         if (!tshirtUserError && tshirtUserData) {
-          data = tshirtUserData;
+          userData = tshirtUserData;
+          userType = 'tshirt_users';
           error = null;
         }
       }
 
       // 로그인 실패 처리
       if (error) {
+        stopLoading();
         throw new Error('로그인에 실패했습니다. 전화번호와 비밀번호를 확인해주세요.');
       }
 
       // 로그인 성공 처리
-      if (data) {
+      if (userData) {
+        // 방문 기록 업데이트 (방문 시간 및 카운트)
+        const currentVisitCount = userData.visit_count || 0;
+        const updateData = {
+          last_visit: new Date().toISOString(),
+          visit_count: currentVisitCount + 1
+        };
+        
+        // 테이블 유형에 따라 적절한 테이블 업데이트
+        const { error: updateError } = await supabase
+          .from(userType)
+          .update(updateData)
+          .eq('phone_number', phoneNumber);
+          
+        if (updateError) {
+          console.error('방문 기록 업데이트 실패:', updateError);
+        }
+
         // 인증 상태 설정
         setUser(phoneNumber);
         
         // 세션 정보가 localStorage에 저장되는 시간을 확보하기 위해 약간 지연
         setTimeout(() => {
           // 리다이렉션 경로 확인 및 로깅
-          const finalRedirectPath = redirectPath || '/myinfo';
-          console.log('로그인 성공, 리다이렉션 경로:', finalRedirectPath);
+          const finalRedirectPath = redirectPath || '/myinfo';  
           
           // 리다이렉션 경로 사용 후 삭제
           localStorage.removeItem(REDIRECT_KEY);
@@ -117,6 +144,7 @@ export default function LoginPage() {
         }, 100); // 100ms 지연
       }
     } catch (err) {
+      stopLoading();
       setError(err instanceof Error ? err.message : '로그인 중 오류가 발생했습니다.');
     }
   };

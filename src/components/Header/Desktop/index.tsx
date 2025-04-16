@@ -7,9 +7,24 @@ import useHeader from '@src/hooks/useHeader';
 import { GrowDown } from '@src/lib/styles/animation';
 import { menuTapList } from '../constants/menuTapList';
 import { MenuTapType } from '../types';
+import { useRouter } from 'next/router';
+import { useLoading } from '@src/contexts/LoadingContext';
 
 function DesktopHeader() {
   const { handleClickLogo, handleIsSelected } = useHeader();
+  const router = useRouter();
+  const { startLoading } = useLoading();
+
+  // 페이지 이동 핸들러
+  const handleNavigate = (href: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    startLoading();
+    
+    // 약간의 지연 후 페이지 이동
+    setTimeout(() => {
+      router.push(href);
+    }, 100);
+  };
 
   return (
     <>
@@ -20,10 +35,12 @@ function DesktopHeader() {
         <MenuTitlesWrapper>
           {menuTapList.map((menuTap) => (
             <MenuTitle
+              as="a"
+              href={menuTap.href}
               menuColor={menuTap.type}
               key={menuTap.title}
-              href={menuTap.href}
               isSelected={handleIsSelected(menuTap.href)}
+              onClick={(e) => handleNavigate(menuTap.href, e)}
             >
               {menuTap.title}
             </MenuTitle>

@@ -93,7 +93,7 @@ const OriginFooter: FC = () => {
       <St.ContentWrap>
         <div>
           <St.TitleButton onClick={handleClick}>
-            <span>개발자에게 한마디</span>
+            <span>개발자에게 한마디(익명)</span>
             <ArrowRight />
           </St.TitleButton>
           <St.CopyrightText>
@@ -112,7 +112,7 @@ const OriginFooter: FC = () => {
         <St.ModalOverlay onClick={handleClose}>
           <St.ModalContent onClick={(e: React.MouseEvent<HTMLDivElement, MouseEvent>) => e.stopPropagation()}>
             <St.ModalHeader>
-              <St.ModalTitle>개발자에게 한마디</St.ModalTitle>
+              <St.ModalTitle>개발자에게 한마디(익명)</St.ModalTitle>
               <St.CloseButton onClick={handleClose}>×</St.CloseButton>
             </St.ModalHeader>
             

@@ -1,4 +1,11 @@
 import styled from '@emotion/styled';
+import { keyframes } from '@emotion/react';
+
+// 로딩 애니메이션을 위한 keyframes 추가
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
 
 export const Container = styled.div`
   width: 100%;
@@ -370,7 +377,6 @@ export const Error = styled.div`
   margin-top: 16px;
 `;
 
-
 export const InfoInputRow = styled.div`
   display: flex;
   justify-content: space-between;
@@ -463,7 +469,6 @@ export const SaveButton = styled.button`
   }
 `;
 
-
 export const CancelButton = styled(Button)`
   background-color: #f8f8f8;
   font-size: 18px;
@@ -474,4 +479,62 @@ export const CancelButton = styled(Button)`
   transition: all 0.2s;
   
   color: #000;
+`;
+
+// 로딩 관련 컴포넌트
+export const LoadingContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 70vh;
+  padding: 20px;
+`;
+
+export const LoadingSpinner = styled.div`
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #2C62EA;
+  border-radius: 50%;
+  animation: ${spin} 1s linear infinite;
+  margin-bottom: 20px;
+`;
+
+export const LoadingText = styled.p`
+  font-size: 16px;
+  color: #666;
+  text-align: center;
+`;
+
+// 에러 관련 컴포넌트
+export const ErrorContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 70vh;
+  padding: 20px;
+`;
+
+export const ErrorText = styled.p`
+  font-size: 16px;
+  color: #e74c3c;
+  text-align: center;
+  margin-bottom: 20px;
+`;
+
+export const RetryButton = styled.button`
+  background-color: #2C62EA;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #1a4ac0;
+  }
 `;

@@ -5,6 +5,7 @@ import * as S from './style';
 import PageLayout from '@src/components/common/PageLayout';
 import { useRouter } from 'next/router';
 import { getCachedBankAccount, BankAccount } from '@src/lib/api/bank';
+import { usePageTransition } from '@src/hooks/usePageTransition';
 
 interface UserInfo {
   name: string;
@@ -72,6 +73,7 @@ export default function MyInfoPage() {
   const sliderRef = useRef<HTMLDivElement>(null);
   const [showQRCode, setShowQRCode] = useState<boolean>(false);
   const [selectedQRData, setSelectedQRData] = useState<string>('');
+  const { navigateTo } = usePageTransition();
   
   // YYYYMMDD 형식의 문자열을 Date 객체로 변환하는 함수
   const parseDateFromString = (dateString: string) => {
@@ -442,6 +444,11 @@ export default function MyInfoPage() {
   // QR 코드 모달 닫기
   const handleCloseQRCode = () => {
     setShowQRCode(false);
+  };
+
+  const handleFaqClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigateTo('/FAQ');
   };
 
   useEffect(() => {
@@ -880,7 +887,7 @@ export default function MyInfoPage() {
             )}
           </S.Section>
 
-          <S.FaqButton onClick={() => router.push('/FAQ')}>FAQ</S.FaqButton>
+          <S.FaqButton onClick={handleFaqClick}>FAQ</S.FaqButton>
           <S.LogoutButton onClick={logout}>로그아웃</S.LogoutButton>    
         </S.Content>
       </S.Container>
