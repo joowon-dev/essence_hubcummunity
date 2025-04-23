@@ -131,6 +131,11 @@ function MyApp({ Component, pageProps }: AppProps) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 
+        {/* iOS Safari를 위한 파비콘 설정 */}
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=1" />
+        <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed.png?v=1" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png?v=1" />
+        <link rel="icon" href="/favicon.ico?v=1" />
 
         <link rel="manifest" href="/manifest.json" />
 
