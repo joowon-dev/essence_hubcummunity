@@ -34,6 +34,10 @@ const ContentBanner = dynamic(() => import('./components/ContentBanner'), {
   ssr: false,
   loading: () => <div style={{ minHeight: '200px', background: '#f8f9fa' }}></div>
 });
+const WallpaperDownload = dynamic(() => import('./components/WallpaperDownload'), { 
+  ssr: false,
+  loading: () => <div style={{ minHeight: '300px', background: '#f8f9fa' }}></div>
+});
 
 // 뷰포트 관찰 옵션
 const viewportOptions = {
@@ -120,6 +124,10 @@ const MainPage = memo(function MainPage() {
         
         <LazyLoadSection id="content-section">
           <ContentBanner />
+        </LazyLoadSection>
+        
+        <LazyLoadSection id="wallpaper-section">
+          <WallpaperDownload />
         </LazyLoadSection>
       </PageLayout>
     </>
