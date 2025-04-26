@@ -74,6 +74,8 @@ export default function MyInfoPage() {
   const [showQRCode, setShowQRCode] = useState<boolean>(false);
   const [selectedQRData, setSelectedQRData] = useState<string>('');
   const { navigateTo } = usePageTransition();
+  const [showConfirmOrder, setShowConfirmOrder] = useState(false);
+  const [orderToConfirm, setOrderToConfirm] = useState<TshirtOrder | null>(null);
   
   // YYYYMMDD 형식의 문자열을 Date 객체로 변환하는 함수
   const parseDateFromString = (dateString: string) => {
@@ -677,6 +679,68 @@ export default function MyInfoPage() {
       .join(', ');
   };
 
+  // 주문확정 모달 열기
+  const handleConfirmOrder = (e: React.MouseEvent, order: TshirtOrder) => {
+    e.stopPropagation(); // 부모 요소 클릭 방지
+    setOrderToConfirm(order);
+    setShowConfirmOrder(true);
+  };
+
+  // 주문확정 모달 닫기
+  const handleCloseConfirmOrder = () => {
+    setShowConfirmOrder(false);
+    setOrderToConfirm(null);
+  };
+
+  // 주문 상태를 주문확정으로 변경
+  const confirmOrder = async () => {
+    if (!orderToConfirm) return;
+    
+    try {
+      // 주문 상태를 '주문확정'으로 업데이트
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: '주문확정' })
+        .eq('order_id', orderToConfirm.order_id);
+        
+      if (error) throw error;
+      
+      // 로컬 상태 업데이트
+      const updatedOrders = tshirtOrders.map(order => 
+        order.order_id === orderToConfirm.order_id 
+          ? { ...order, status: '주문확정' } 
+          : order
+      );
+      
+      setTshirtOrders(updatedOrders);
+      setShowConfirmOrder(false);
+      setOrderToConfirm(null);
+      
+      alert('주문이 확정되었습니다.');
+    } catch (error) {
+      console.error('주문 확정 중 오류 발생:', error);
+      alert('주문 확정 처리 중 오류가 발생했습니다.');
+    }
+  };
+  
+  // 주문 상태에 따른 색상 반환
+  const getStatusColor = (status: string) => {
+    switch(status) {
+      case '미입금':
+        return '#F8D7DA';
+      case '입금확인중':
+        return '#fff3cd';
+      case '입금완료':
+        return '#D4EDDA';
+      case '취소됨':
+        return '#E2E3E5';
+      case '주문확정':
+        return '#ed2725'; // 빨간색으로 변경
+      default:
+        return '#8c8c8c';
+    }
+  };
+
   if (!isAuthenticated || !phoneNumber) {
     return null;
   }
@@ -718,6 +782,45 @@ export default function MyInfoPage() {
             onClose={handleCloseConfirmation}
           />
         )}
+        
+        {showConfirmOrder && orderToConfirm && (
+          <S.ModalContainer>
+            <S.ModalSheet>
+              <S.ModalTitle>주문 확정</S.ModalTitle>
+              
+              <S.Section>
+                <S.ModalSectionTitle>주문 정보</S.ModalSectionTitle>
+                <S.OrderList>
+                  {Array.from(new Set(orderToConfirm.items.map((item: TshirtOrderItem) => item.color))).map((color: string) => (
+                    <S.OrderItem key={color}>
+                      <S.ProductName>
+                        {color}
+                      </S.ProductName>
+                      <S.ProductDetails>
+                        {orderToConfirm.items
+                          .filter((item: TshirtOrderItem) => item.color === color)
+                          .map((item: TshirtOrderItem) => `${item.size} ${item.quantity}개`)
+                          .join(', ')}
+                      </S.ProductDetails>
+                    </S.OrderItem>
+                  ))}
+                </S.OrderList>
+              </S.Section>
+              
+              <S.ConfirmText>이 주문을 확정하시겠습니까?</S.ConfirmText>
+              <S.ConfirmNote>주문 확정 후에는 변경이 불가능합니다.</S.ConfirmNote>
+              
+              <S.ButtonGroup>
+                <S.CancelButton onClick={handleCloseConfirmOrder}>취소</S.CancelButton>
+                <S.RedConfirmButton onClick={confirmOrder}>
+                  확인
+                </S.RedConfirmButton>
+              </S.ButtonGroup>
+            </S.ModalSheet>
+            <S.ModalOverlay onClick={handleCloseConfirmOrder} />
+          </S.ModalContainer>
+        )}
+        
         {showQRCode && (
           <S.ModalContainer>
             <S.ModalSheet>
@@ -736,6 +839,7 @@ export default function MyInfoPage() {
             <S.ModalOverlay onClick={handleCloseQRCode} />
           </S.ModalContainer>
         )}
+        
         <S.Content>
           <S.Title>{userInfo.name}</S.Title>
           <S.Subtitle>{userInfo.group_name}</S.Subtitle>
@@ -791,20 +895,46 @@ export default function MyInfoPage() {
                     onMouseLeave={handleTouchEnd}
                   >
                     {tshirtOrders.map((order) => (
-                      <S.OrderCard key={order.order_id} onClick={order.status !== '취소됨' ? () => handleViewOrderDetails(order) : undefined}>
-                        <S.OrderHeader>
-                          <S.OrderStatus status={order.status}>
+                      <S.OrderCard 
+                        key={order.order_id} 
+                        onClick={order.status !== '취소됨' ? () => handleViewOrderDetails(order) : undefined}
+                        style={{
+                          ...(order.status === '주문확정' ? {
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            textAlign: 'center'
+                          } : {})
+                        }}
+                      >
+                        <S.OrderHeader style={order.status === '주문확정' ? { width: '100%' } : {}}>
+                          <S.OrderStatus 
+                            status={order.status}
+                            style={{ 
+                              backgroundColor: getStatusColor(order.status),
+                              color: order.status === '주문확정' ? '#ffffff' : 'inherit'
+                            }}
+                          >
                             {order.status}
                           </S.OrderStatus>
                           <S.OrderNumber>주문 #{order.order_id}</S.OrderNumber>
                         </S.OrderHeader>
                         
-                        <S.OrderSummary>
-                          {isDeadlinePassed() && order.status === '입금완료' && (
-                            <div onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenQRCode(order.order_id);
-                            }} style={{ marginBottom: '16px', cursor: 'pointer' }}>
+                        <S.OrderSummary style={order.status === '주문확정' ? { alignItems: 'center' } : {}}>
+                          {(order.status === '주문확정') && (
+                            <div 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenQRCode(order.order_id);
+                              }} 
+                              style={{ 
+                                marginBottom: '16px', 
+                                cursor: 'pointer',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center'
+                              }}
+                            >
                               <img 
                                 src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${generateQRData(order.order_id)}`} 
                                 alt="QR 코드" 
@@ -826,23 +956,34 @@ export default function MyInfoPage() {
                           ))}
                         </S.OrderSummary>
                         
-                        {/* 취소된 항목은 버튼 제거, 입금완료 항목은 사이즈변경하기로 변경 */}
-                        {order.status !== '취소됨' && !isDeadlinePassed() && (
-                          order.status === '입금완료' ? (
-                            <S.ViewDetailText onClick={(e) => {
-                              e.stopPropagation(); // 부모 onClick 이벤트 방지
-                              handleSizeChange(order);
-                            }}>
-                              변경하기
-                              <S.ViewDetailIcon>›</S.ViewDetailIcon>
-                            </S.ViewDetailText>
-                          ) : (
-                            <S.ViewDetailText>
-                              상세정보 보기
-                              <S.ViewDetailIcon>›</S.ViewDetailIcon>
-                            </S.ViewDetailText>
-                          )
-                        )}
+                        <S.OrderActionsContainer>
+                          {/* 입금완료 상태면 주문확정 버튼 표시 */}
+                          {order.status === '입금완료' && (
+                            <S.ConfirmOrderButton 
+                              onClick={(e) => handleConfirmOrder(e, order)}
+                            >
+                              주문확정
+                            </S.ConfirmOrderButton>
+                          )}
+                          
+                          {/* 취소된 항목은 버튼 제거, 상세정보 보기 등 */}
+                          {order.status !== '취소됨' && !isDeadlinePassed() && (
+                            order.status === '입금완료' ? (
+                              <S.ViewDetailText onClick={(e) => {
+                                e.stopPropagation(); // 부모 onClick 이벤트 방지
+                                handleSizeChange(order);
+                              }}>
+                                변경하기
+                                <S.ViewDetailIcon>›</S.ViewDetailIcon>
+                              </S.ViewDetailText>
+                            ) : (
+                              <S.ViewDetailText>
+                                상세정보 보기
+                                <S.ViewDetailIcon>›</S.ViewDetailIcon>
+                              </S.ViewDetailText>
+                            )
+                          )}
+                        </S.OrderActionsContainer>
                       </S.OrderCard>
                     ))}
                   </S.OrderCardsSlider>

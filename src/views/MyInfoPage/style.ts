@@ -903,12 +903,20 @@ export const CancelOrderButton = styled(CancelButton)`
   }
 `;
 
-export const ConfirmButton = styled(CancelButton)`
-  background-color: #000;
+export const RedConfirmButton = styled.button`
+  background-color: #ed2725;
   color: #fff;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 6px;
+  border: none;
+  font-size: 15px;
+  cursor: pointer;
+  flex: 1;
+  transition: background-color 0.2s;
   
   &:hover {
-    background-color: #333;
+    background-color: #d61c1a;
   }
 `;
 
@@ -951,4 +959,63 @@ export const PaymentValue = styled.span`
   font-size: 14px;
   color: #000;
   font-weight: 600;
+`;
+
+// 주문확정 버튼 스타일
+export const ConfirmOrderButton = styled.button`
+  background-color: #ed2725;
+  color: #fff;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  margin-right: auto;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s, transform 0.1s;
+  
+  &:hover {
+    background-color: #d61c1a;
+    transform: translateY(-1px);
+  }
+  
+  &:active {
+    transform: translateY(1px);
+  }
+`;
+
+// 확인 버튼 스타일
+export const ConfirmButton = styled(CancelButton)`
+  background-color: #000;
+  color: #fff;
+  
+  &:hover {
+    background-color: #333;
+  }
+`;
+
+// 주문 액션 컨테이너 (버튼들을 담는 컨테이너)
+export const OrderActionsContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+`;
+
+// 확인 텍스트 스타일
+export const ConfirmText = styled.p`
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  margin: 24px 0 8px;
+  color: #000;
+`;
+
+// 확인 노트 스타일
+export const ConfirmNote = styled.p`
+  font-size: 14px;
+  text-align: center;
+  margin: 0 0 24px;
+  color: #666;
 `; 

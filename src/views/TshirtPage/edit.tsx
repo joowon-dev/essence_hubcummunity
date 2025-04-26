@@ -138,8 +138,11 @@ export default function TshirtEditPage() {
           price: tshirtData.price
         }));
         
-        // 초기 장바구니 항목 설정 (기존 주문 항목)
-        const initialCartItems = itemsData.map(item => ({
+        // 3XL 사이즈 항목 찾기
+        const items3XL = itemsData.filter(item => item.size === '3XL');
+        
+        // 기존 주문 항목을 저장하되, 초기 장바구니는 3XL 사이즈만 포함
+        const initialCartItems: CartItem[] = items3XL.map(item => ({
           size: item.size,
           color: item.color,
           quantity: item.quantity,
@@ -148,6 +151,7 @@ export default function TshirtEditPage() {
         
         // 총 수량 계산
         const totalQty = itemsData.reduce((sum, item) => sum + item.quantity, 0);
+        const initial3XLQty = initialCartItems.reduce((sum, item) => sum + item.quantity, 0);
         
         setTshirt(tshirtData);
         setOptions(optionsWithPrice);
@@ -156,8 +160,13 @@ export default function TshirtEditPage() {
           ...orderData,
           items: itemsData
         });
-        setTotalQuantity(totalQty);
+        setTotalQuantity(initial3XLQty); // 3XL 사이즈 상품 수량만 초기에 설정
         setOriginalTotalQuantity(totalQty);
+        
+        // 3XL 사이즈가 있으면 안내 메시지 표시
+        if (items3XL.length > 0) {
+          setError('3XL 사이즈 상품이 자동으로 추가되었습니다. 이 상품은 변경할 수 없습니다.');
+        }
         
       } catch (error) {
         console.error('주문 정보 로딩 중 오류 발생:', error);
@@ -268,14 +277,47 @@ export default function TshirtEditPage() {
   };
 
   const handleSaveChanges = async () => {
+    // 저장 불가 사유 확인
+    let saveErrorMessage = '';
+    
     if (cartItems.length === 0) {
-      setError('장바구니가 비어있습니다.');
+      saveErrorMessage = '장바구니가 비어있습니다. 변경할 상품을 먼저 추가해주세요.';
+      setError(saveErrorMessage);
       return;
     }
     
     if (totalQuantity !== originalTotalQuantity) {
-      setError(`총 수량이 원래 주문과 일치하지 않습니다. 현재: ${totalQuantity}, 원래: ${originalTotalQuantity}`);
+      saveErrorMessage = `총 수량이 원래 주문과 일치하지 않습니다. 현재: ${totalQuantity}개, 원래: ${originalTotalQuantity}개가 필요합니다.`;
+      setError(saveErrorMessage);
       return;
+    }
+    
+    // 3XL 사이즈 확인 - 기존에 3XL이 있었는데 장바구니에 없는 경우
+    const original3XLItems = originalOrder?.items.filter(item => item.size === '3XL') || [];
+    const has3XLInOriginal = original3XLItems.length > 0;
+    const has3XLInCart = cartItems.some(item => item.size === '3XL');
+    
+    if (has3XLInOriginal && !has3XLInCart) {
+      const missing3XL = original3XLItems.map(item => 
+        `${item.color} / 3XL (${item.quantity}개)`
+      ).join(', ');
+      
+      saveErrorMessage = `3XL 사이즈가 누락되었습니다. 기존 주문의 ${missing3XL} 항목을 반드시 포함해야 합니다.`;
+      setError(saveErrorMessage);
+      return;
+    }
+    
+    // 3XL 사이즈의 수량이 변경된 경우
+    for (const originalItem of original3XLItems) {
+      const cartItem = cartItems.find(item => 
+        item.size === '3XL' && item.color === originalItem.color
+      );
+      
+      if (!cartItem || cartItem.quantity !== originalItem.quantity) {
+        saveErrorMessage = `${originalItem.color} / 3XL의 수량(${originalItem.quantity}개)이 변경되었습니다. 3XL 사이즈는 변경할 수 없습니다.`;
+        setError(saveErrorMessage);
+        return;
+      }
     }
 
     try {
@@ -308,8 +350,21 @@ export default function TshirtEditPage() {
       
     } catch (error) {
       console.error('주문 변경 중 오류 발생:', error);
-      setError('주문 변경 중 오류가 발생했습니다.');
+      setError('주문 변경 중 오류가 발생했습니다. 다시 시도해주세요.');
     }
+  };
+
+  // 저장 버튼 비활성화 상태에 대한 설명 메시지
+  const getSaveButtonMessage = () => {
+    if (cartItems.length === 0) {
+      return '상품을 장바구니에 추가해야 저장할 수 있습니다';
+    }
+    
+    if (totalQuantity !== originalTotalQuantity) {
+      return `총 수량이 맞지 않습니다 (${totalQuantity}/${originalTotalQuantity}개)`;
+    }
+    
+    return '';
   };
 
   const formatPrice = (price: number) => {
@@ -352,13 +407,39 @@ export default function TshirtEditPage() {
         <S.Content>
           <S.InfoSection2>
             <S.ProductTitle>티셔츠 주문 변경</S.ProductTitle>
-            <S.Deadline>주문 번호: {originalOrder.order_id}</S.Deadline>
+            <S.Deadline>주문 번호: {originalOrder?.order_id}</S.Deadline>
             <S.Notice>
               * 색상, 사이즈, 각 항목별 수량을 변경할 수 있습니다.<br />
               * 총 수량({originalTotalQuantity}개)은 변경할 수 없습니다.<br />
-              * 모든 변경은 {deadline || tshirt.deadline}까지만 가능합니다.<br />
-              * 3XL 사이즈는 변경이 불가능합니다.
+              * 모든 변경은 {deadline || tshirt?.deadline}까지만 가능합니다.<br />
+              * 3XL 사이즈는 변경이 불가능합니다.<br />
+              * 기존 주문에서 3XL 사이즈가 있었다면 반드시 포함해주세요.
             </S.Notice>
+
+            {/* 원래 주문 정보 표시 */}
+            {originalOrder && (
+              <S.Section>
+                <S.Label>기존 주문 정보</S.Label>
+                <div style={{ marginTop: '12px' }}>
+                  {Array.from(new Set(originalOrder.items.map(item => item.color))).map(color => (
+                    <div key={color}>
+                      <div style={{ fontWeight: 'bold', marginTop: '8px' ,fontSize: '14px'}}>{color}</div>
+                      {originalOrder.items
+                        .filter(item => item.color === color)
+                        .map(item => (
+                          <div key={item.item_id} style={{ marginLeft: '16px', fontSize: '14px' }}>
+                            {item.size}: {item.quantity}개 
+                            {item.size === '3XL' && <span style={{ color: 'red', marginLeft: '8px' }}>※ 변경불가</span>}
+                          </div>
+                        ))}
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontSize: '14px', color: '#666', marginTop: '12px' }}>
+                  총 수량: {originalTotalQuantity}개
+                </div>
+              </S.Section>
+            )}
 
             <S.Sheet>
               <S.Section>
@@ -450,19 +531,55 @@ export default function TshirtEditPage() {
                 </S.CartSection>
               )}
 
-              {error && <S.Error>{error}</S.Error>}
+              {error && (
+                <S.Error>
+                  <div style={{ marginBottom: '4px', fontWeight: 'bold' }}>❗ 오류</div>
+                  {error}
+                </S.Error>
+              )}
 
-              <S.ButtonGroup>
-                <S.CancelButton onClick={() => router.push('/myinfo')}>
-                  취소
-                </S.CancelButton>
+              <div style={{ 
+                display: 'flex',
+                flexDirection: 'column',
+                width: '100%',
+                gap: '10px',
+                marginTop: '20px'
+              }}>
                 <S.SaveButton 
                   onClick={handleSaveChanges}
                   disabled={cartItems.length === 0 || totalQuantity !== originalTotalQuantity}
+                  style={{ 
+                    width: '100%', 
+                    padding: '15px 0',
+                    fontSize: '16px'
+                  }}
                 >
-                  변경사항 저장
+                  변경사항 저장 ({totalQuantity}/{originalTotalQuantity}개)
                 </S.SaveButton>
-              </S.ButtonGroup>
+                
+                <S.CancelButton 
+                  onClick={() => router.push('/myinfo')}
+                  style={{ 
+                    width: '100%', 
+                    padding: '15px 0',
+                    fontSize: '16px'
+                  }}
+                >
+                  취소
+                </S.CancelButton>
+                
+                {/* 저장 버튼 비활성화 시 메시지는 버튼 아래에 별도로 표시 */}
+                {getSaveButtonMessage() && (
+                  <div style={{ 
+                    fontSize: '13px', 
+                    color: '#e53e3e', 
+                    marginTop: '8px',
+                    textAlign: 'center'
+                  }}>
+                    {getSaveButtonMessage()}
+                  </div>
+                )}
+              </div>
             </S.Sheet>
           </S.InfoSection2>
         </S.Content>

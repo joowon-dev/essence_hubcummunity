@@ -148,13 +148,14 @@ export async function getOrderStatusStats(): Promise<Record<string, number>> {
 
     if (error) {
       console.error('주문 상태 통계 조회 오류:', error);
-      return { '미입금': 0, '입금확인중': 0, '입금완료': 0, '취소됨': 0 };
+      return { '미입금': 0, '입금확인중': 0, '입금완료': 0, '주문확정': 0, '취소됨': 0 };
     }
 
     const stats: Record<string, number> = { 
       '미입금': 0, 
       '입금확인중': 0, 
       '입금완료': 0, 
+      '주문확정': 0,
       '취소됨': 0 
     };
     
@@ -170,7 +171,7 @@ export async function getOrderStatusStats(): Promise<Record<string, number>> {
     return stats;
   } catch (error) {
     console.error('주문 상태 통계 조회 중 오류:', error);
-    return { '미입금': 0, '입금확인중': 0, '입금완료': 0, '취소됨': 0 };
+    return { '미입금': 0, '입금확인중': 0, '입금완료': 0, '주문확정': 0, '취소됨': 0 };
   }
 }
 
@@ -241,6 +242,7 @@ export async function getTshirtOrderStats(): Promise<any> {
       '미입금': Record<string, number>;
       '입금확인중': Record<string, number>;
       '입금완료': Record<string, number>;
+      '주문확정': Record<string, number>;
       '취소됨': Record<string, number>;
       '합계': Record<string, number>;
       [key: string]: Record<string, number>;
@@ -248,6 +250,7 @@ export async function getTshirtOrderStats(): Promise<any> {
       '미입금': {},
       '입금확인중': {},
       '입금완료': {},
+      '주문확정': {},
       '취소됨': {},
       '합계': {}
     };
@@ -258,6 +261,7 @@ export async function getTshirtOrderStats(): Promise<any> {
       stats['미입금'][key] = 0;
       stats['입금확인중'][key] = 0;
       stats['입금완료'][key] = 0;
+      stats['주문확정'][key] = 0;
       stats['취소됨'][key] = 0;
       stats['합계'][key] = 0;
     });

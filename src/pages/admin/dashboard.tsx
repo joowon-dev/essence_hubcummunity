@@ -11,12 +11,14 @@ export default function AdminDashboardPage() {
     '미입금': 0,
     '입금확인중': 0,
     '입금완료': 0,
+    '주문확정': 0,
     '취소됨': 0
   });
   const [loading, setLoading] = useState(true);
   const [orderStats, setOrderStats] = useState<any>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const { navigateTo } = usePageTransition();
+  const [selectedStatusFilters, setSelectedStatusFilters] = useState<string[]>(['미입금', '입금확인중', '입금완료', '주문확정', '취소됨']);
   
   useEffect(() => {
     const loadStats = async () => {
@@ -61,8 +63,8 @@ export default function AdminDashboardPage() {
   const calculateOptionTotalWithoutCancelled = (optionKey: string) => {
     if (!orderStats || !orderStats.stats) return 0;
     
-    return ['미입금', '입금확인중', '입금완료'].reduce((sum: number, status: string) => {
-      return sum + (orderStats.stats[status][optionKey] || 0);
+    return ['미입금', '입금확인중', '입금완료', '주문확정'].reduce((sum: number, status: string) => {
+      return sum + ((orderStats.stats[status] && orderStats.stats[status][optionKey]) || 0);
     }, 0);
   };
   
@@ -92,6 +94,26 @@ export default function AdminDashboardPage() {
   const handleNavigate = (href: string, e: React.MouseEvent) => {
     e.preventDefault();
     navigateTo(href);
+  };
+
+  // 상태 필터 토글 핸들러
+  const toggleStatusFilter = (status: string) => {
+    setSelectedStatusFilters(prev => {
+      if (prev.includes(status)) {
+        return prev.filter(s => s !== status);
+      } else {
+        return [...prev, status];
+      }
+    });
+  };
+
+  // 모든 필터 선택/해제 핸들러
+  const toggleAllFilters = () => {
+    if (selectedStatusFilters.length === 5) { // 모든 필터가 선택된 상태
+      setSelectedStatusFilters([]);
+    } else {
+      setSelectedStatusFilters(['미입금', '입금확인중', '입금완료', '주문확정', '취소됨']);
+    }
   };
 
   return (
@@ -132,6 +154,12 @@ export default function AdminDashboardPage() {
               </StatCard>
               
               <StatCard>
+                <StatTitle>주문확정</StatTitle>
+                <StatValue color="#3b82f6">{stats['주문확정'] || 0}</StatValue>
+                <StatDescription>확정된 주문</StatDescription>
+              </StatCard>
+              
+              <StatCard>
                 <StatTitle>취소됨</StatTitle>
                 <StatValue color="#6b7280">{stats['취소됨']}</StatValue>
                 <StatDescription>취소된 주문</StatDescription>
@@ -153,6 +181,53 @@ export default function AdminDashboardPage() {
                   <StatsCardTitle>티셔츠 주문 상세 통계</StatsCardTitle>
                   <StatsCardSubtitle>옵션별 주문 수량 (취소됨 상태는 합계에 미포함)</StatsCardSubtitle>
                 </StatsCardHeader>
+                
+                <StatusFilterContainer>
+                  <StatusFilterTitle>상태 필터:</StatusFilterTitle>
+                  <StatusFilterButtonGroup>
+                    <StatusFilterButton 
+                      onClick={toggleAllFilters}
+                      isSelected={selectedStatusFilters.length === 5}
+                    >
+                      전체
+                    </StatusFilterButton>
+                    <StatusFilterButton 
+                      onClick={() => toggleStatusFilter('미입금')}
+                      isSelected={selectedStatusFilters.includes('미입금')}
+                      color="#ef4444"
+                    >
+                      미입금
+                    </StatusFilterButton>
+                    <StatusFilterButton 
+                      onClick={() => toggleStatusFilter('입금확인중')}
+                      isSelected={selectedStatusFilters.includes('입금확인중')}
+                      color="#f97316"
+                    >
+                      입금확인중
+                    </StatusFilterButton>
+                    <StatusFilterButton 
+                      onClick={() => toggleStatusFilter('입금완료')}
+                      isSelected={selectedStatusFilters.includes('입금완료')}
+                      color="#10b981"
+                    >
+                      입금완료
+                    </StatusFilterButton>
+                    <StatusFilterButton 
+                      onClick={() => toggleStatusFilter('주문확정')}
+                      isSelected={selectedStatusFilters.includes('주문확정')}
+                      color="#3b82f6"
+                    >
+                      주문확정
+                    </StatusFilterButton>
+                    <StatusFilterButton 
+                      onClick={() => toggleStatusFilter('취소됨')}
+                      isSelected={selectedStatusFilters.includes('취소됨')}
+                      color="#6b7280"
+                    >
+                      취소됨
+                    </StatusFilterButton>
+                  </StatusFilterButtonGroup>
+                </StatusFilterContainer>
                 
                 <StatsTableContainer>
                   <StatisticsTable>
@@ -190,7 +265,9 @@ export default function AdminDashboardPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {['미입금', '입금확인중', '입금완료', '취소됨'].map(status => (
+                      {['미입금', '입금확인중', '입금완료', '주문확정', '취소됨'].filter(status => 
+                        selectedStatusFilters.includes(status)
+                      ).map(status => (
                         <StatisticsTableRow key={status}>
                           <StatisticsTableCell>
                             <StatusBadge status={status}>{status}</StatusBadge>
@@ -198,7 +275,7 @@ export default function AdminDashboardPage() {
                           {colorOrder.map(color => (
                             sizeOrder.map(size => {
                               const key = `${size}|${color}`;
-                              const value = orderStats.stats[status][key] || 0;
+                              const value = orderStats.stats[status]?.[key] || 0;
                               return (
                                 <StatisticsTableCell 
                                   key={key}
@@ -214,6 +291,33 @@ export default function AdminDashboardPage() {
                           </StatisticsTableCell>
                         </StatisticsTableRow>
                       ))}
+                      {/* 주문확정 합계 (필터링 적용) */}
+                      {selectedStatusFilters.includes('주문확정') && selectedStatusFilters.length > 1 && (
+                        <StatisticsTableRow>
+                          <StatisticsTableCell>
+                            <StatusBadge status="주문확정합계">주문확정 합계</StatusBadge>
+                          </StatisticsTableCell>
+                          {colorOrder.map(color => (
+                            sizeOrder.map(size => {
+                              const key = `${size}|${color}`;
+                              const total = orderStats.stats['주문확정']?.[key] || 0;
+                              return (
+                                <StatisticsTableCell 
+                                  key={key}
+                                  highlighted={true}
+                                  specialColor="#3b82f6"
+                                >
+                                  {total}
+                                </StatisticsTableCell>
+                              );
+                            })
+                          ))}
+                          <StatisticsTableCell highlighted={true} specialColor="#3b82f6">
+                            {calculateTotalWithoutCancelled('주문확정')}
+                          </StatisticsTableCell>
+                        </StatisticsTableRow>
+                      )}
+                      {/* 유효 합계 행 (필터링에 따라 계산이 달라짐) */}
                       <StatisticsTableRow>
                         <StatisticsTableCell>
                           <StatusBadge status="합계">유효 합계</StatusBadge>
@@ -221,7 +325,11 @@ export default function AdminDashboardPage() {
                         {colorOrder.map(color => (
                           sizeOrder.map(size => {
                             const key = `${size}|${color}`;
-                            const total = calculateOptionTotalWithoutCancelled(key);
+                            // 필터링된 상태만 합산 (취소됨 제외)
+                            const total = selectedStatusFilters
+                              .filter(status => status !== '취소됨')
+                              .reduce((sum, status) => 
+                                sum + (orderStats.stats[status]?.[key] || 0), 0);
                             return (
                               <StatisticsTableCell 
                                 key={key}
@@ -233,8 +341,10 @@ export default function AdminDashboardPage() {
                           })
                         ))}
                         <StatisticsTableCell highlighted={true}>
-                          {['미입금', '입금확인중', '입금완료'].reduce((sum, status) => 
-                            sum + calculateTotalWithoutCancelled(status), 0)}
+                          {selectedStatusFilters
+                            .filter(status => status !== '취소됨')
+                            .reduce((sum, status) => 
+                              sum + calculateTotalWithoutCancelled(status), 0)}
                         </StatisticsTableCell>
                       </StatisticsTableRow>
                     </tbody>
@@ -416,6 +526,46 @@ const StatsCardSubtitle = styled.p`
   margin: 0;
 `;
 
+const StatusFilterContainer = styled.div`
+  margin-bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+`;
+
+const StatusFilterTitle = styled.span`
+  font-size: 14px;
+  font-weight: 500;
+  color: #4b5563;
+`;
+
+const StatusFilterButtonGroup = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+`;
+
+const StatusFilterButton = styled.button<{ isSelected?: boolean; color?: string }>`
+  padding: 6px 12px;
+  background-color: ${props => props.isSelected 
+    ? props.color || '#4b5563'
+    : 'white'};
+  color: ${props => props.isSelected ? 'white' : props.color || '#4b5563'};
+  border: 1px solid ${props => props.color || '#e5e7eb'};
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background-color: ${props => props.isSelected 
+      ? props.color || '#4b5563'
+      : props.color ? `${props.color}20` : '#f3f4f6'};
+  }
+`;
+
 const StatsTableContainer = styled.div`
   overflow-x: auto;
   margin: 0 -16px;
@@ -453,12 +603,12 @@ const StatisticsTableRow = styled.tr`
   }
 `;
 
-const StatisticsTableCell = styled.td<{ highlighted?: boolean }>`
+const StatisticsTableCell = styled.td<{ highlighted?: boolean; specialColor?: string }>`
   padding: 12px 15px;
   text-align: center;
   border-bottom: 1px solid #ddd;
   border: 1px solid #e2e8f0;
-  color: ${props => props.highlighted ? '#10b981' : '#1f2937'};
+  color: ${props => props.specialColor || (props.highlighted ? '#10b981' : '#1f2937')};
   font-weight: ${props => props.highlighted ? '700' : '400'};
   font-size: 15px;
   &:first-child {
@@ -492,6 +642,8 @@ const StatusBadge = styled.span<{ status: string }>`
       case '미입금': return '#ef4444';
       case '입금확인중': return '#f97316';
       case '입금완료': return '#10b981';
+      case '주문확정': return '#3b82f6';
+      case '주문확정합계': return '#3b82f6';
       case '취소됨': return '#6b7280';
       case '합계': return '#3b82f6';
       default: return '#6b7280';

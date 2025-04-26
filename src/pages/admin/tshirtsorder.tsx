@@ -13,6 +13,7 @@ import {
 } from '@src/lib/api/admin';
 import Head from 'next/head';
 import * as XLSX from 'xlsx';
+import { message } from 'antd';
 
 // 엑셀 데이터 인터페이스
 interface ExcelData {
@@ -227,6 +228,8 @@ export default function TshirtOrderManagementPage() {
         return '#f97316'; // 주황색 (입금확인중)
       case '입금완료':
         return '#10b981'; // 초록색 (입금완료)
+      case '주문확정':
+        return '#3b82f6'; // 파란색 (주문확정)
       case '취소됨':
         return '#6b7280'; // 회색 (취소됨)
       default:
@@ -243,6 +246,8 @@ export default function TshirtOrderManagementPage() {
         return '입금확인중';
       case '입금완료':
         return '입금완료';
+      case '주문확정':
+        return '주문확정';
       case '취소됨':
         return '취소됨';
       default:
@@ -425,6 +430,30 @@ export default function TshirtOrderManagementPage() {
       .join(', ');
   };
   
+  // 사이즈 업데이트 함수 추가
+  const updateTshirtSize = async (orderId: number, color: string, oldSize: string, newSize: string, itemId: number) => {
+    try {
+      const response = await fetch(`/api/admin/tshirt/update-size`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, color, oldSize, newSize, itemId })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        message.success(`사이즈가 성공적으로 변경되었습니다 (${result.updateCount}건 업데이트)`);
+        // 주문 아이템 새로고침
+        const updatedItems = await getOrderItems(orderId);
+        setOrderItems(updatedItems);
+      } else {
+        message.error('사이즈 변경에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('사이즈 변경 중 오류 발생:', error);
+      message.error('사이즈 변경 중 오류가 발생했습니다.');
+    }
+  };
+  
   return (
     <>
       <Head>
@@ -472,6 +501,7 @@ export default function TshirtOrderManagementPage() {
                   <option value="미입금">미입금</option>
                   <option value="입금확인중">입금확인중</option>
                   <option value="입금완료">입금완료</option>
+                  <option value="주문확정">주문확정</option>
                   <option value="취소됨">취소됨</option>
                 </FilterSelect>
               </>
@@ -592,6 +622,7 @@ export default function TshirtOrderManagementPage() {
                               <option value="미입금">미입금</option>
                               <option value="입금확인중">입금확인중</option>
                               <option value="입금완료">입금완료</option>
+                              <option value="주문확정">주문확정</option>
                               <option value="취소됨">취소됨</option>
                             </StatusSelect>
                           </ActionContainer>
@@ -696,7 +727,26 @@ export default function TshirtOrderManagementPage() {
                         {orderItems.map(item => (
                           <tr key={item.item_id}>
                             <ItemTableCell>{item.item_id}</ItemTableCell>
-                            <ItemTableCell>{item.size}</ItemTableCell>
+                            <ItemTableCell>
+                              <SizeSelect 
+                                defaultValue={item.size} 
+                                onChange={(e) => updateTshirtSize(
+                                  selectedOrderDetails.order_id, 
+                                  item.color, 
+                                  item.size, 
+                                  e.target.value,
+                                  item.item_id
+                                )}
+                              >
+                                <option value="XS">XS</option>
+                                <option value="S">S</option>
+                                <option value="M">M</option>
+                                <option value="L">L</option>
+                                <option value="XL">XL</option>
+                                <option value="2XL">2XL</option>
+                                <option value="3XL">3XL</option>
+                              </SizeSelect>
+                            </ItemTableCell>
                             <ItemTableCell>{item.color}</ItemTableCell>
                             <ItemTableCell>{item.quantity}</ItemTableCell>
                           </tr>
@@ -1254,4 +1304,22 @@ const StatsRowHeader = styled.td`
 
 const StatsCell = styled.td<{ highlighted?: boolean }>`
   display: none; /* 대시보드 셀 숨김 */
+`;
+
+// 사이즈 선택 컴포넌트 추가
+const SizeSelect = styled.select`
+  padding: 6px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background-color: white;
+  font-size: 14px;
+  
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+  }
+  
+  &:hover {
+    border-color: #3b82f6;
+  }
 `; 
