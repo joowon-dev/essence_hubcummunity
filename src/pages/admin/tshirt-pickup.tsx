@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import styled from '@emotion/styled';
 import Head from 'next/head';
 import AdminLayout from '@src/components/AdminLayout';
-import { verifyQRCodeAndUpdateStatus } from '@src/lib/api/admin';
+import { verifyQRCodeAndUpdateStatus, updateOrderStatus } from '@src/lib/api/admin';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 
 // verifyQRCodeAndUpdateStatus 함수 타입 선언 추가
@@ -19,6 +19,7 @@ export default function TshirtPickupPage() {
     success: boolean;
     message: string;
     orderData?: any;
+    pendingConfirmation?: boolean;
   } | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [scannerInitialized, setScannerInitialized] = useState(false);
@@ -109,6 +110,8 @@ export default function TshirtPickupPage() {
 
   // QR 코드 형식 검증 함수
   const parseQRCode = (code: string) => {
+    console.log("처리할 QR 코드:", code);
+    
     // 다양한 QR 코드 포맷 처리
     // 포맷 1: "217-010-3186-0505" (주문번호-전화번호 분리된 형태)
     // 포맷 2: "217-01031860505" (주문번호-전화번호)
@@ -118,28 +121,51 @@ export default function TshirtPickupPage() {
     
     if (!code) return { orderId, userPhone };
     
-    // 하이픈으로 분리된 부분 확인
-    const parts = code.split('-');
-    
-    if (parts.length === 2) {
-      // 217-01031860505 형식
-      orderId = parts[0].trim();
+    try {
+      // 하이픈으로 분리된 부분 확인
+      const parts = code.split('-');
+      console.log("분할된 파트:", parts);
       
-      // 전화번호 형식 변환 (01012345678 → 010-1234-5678)
-      const phone = parts[1].trim();
-      if (phone.length === 11) {
-        userPhone = `${phone.substring(0, 3)}-${phone.substring(3, 7)}-${phone.substring(7)}`;
+      if (parts.length === 4) {
+        // 217-010-3186-0505 형식
+        orderId = parts[0].trim();
+        userPhone = `${parts[1]}-${parts[2]}-${parts[3]}`;
+        console.log(`4개 파트 파싱 결과 - orderId: ${orderId}, userPhone: ${userPhone}`);
+      } else if (parts.length === 2) {
+        // 217-01031860505 형식
+        orderId = parts[0].trim();
+        
+        // 전화번호 형식 변환 (01012345678 → 010-1234-5678)
+        const phone = parts[1].trim();
+        if (phone.length === 11) {
+          userPhone = `${phone.substring(0, 3)}-${phone.substring(3, 7)}-${phone.substring(7)}`;
+        } else {
+          userPhone = phone;
+        }
+        console.log(`2개 파트 파싱 결과 - orderId: ${orderId}, userPhone: ${userPhone}`);
       } else {
-        userPhone = phone;
+        // QR 코드 형식이 다르면 고정된 형식으로 시도
+        const qrCodeRegex = /(\d+)-(\d+)-(\d+)-(\d+)/;
+        const match = code.match(qrCodeRegex);
+        
+        if (match) {
+          orderId = match[1];
+          userPhone = `${match[2]}-${match[3]}-${match[4]}`;
+          console.log(`정규식 파싱 결과 - orderId: ${orderId}, userPhone: ${userPhone}`);
+        } else {
+          console.log("인식할 수 없는 QR 코드 형식");
+          orderId = '';
+          userPhone = '';
+        }
       }
-    } else if (parts.length === 4) {
-      // 217-010-3186-0505 형식
-      orderId = parts[0].trim();
-      userPhone = `${parts[1]}-${parts[2]}-${parts[3]}`;
-    } else {
-      // 다른 형식은 그대로 반환
-      orderId = code;
+    } catch (error) {
+      console.error("QR 코드 파싱 중 오류:", error);
+      orderId = '';
+      userPhone = '';
     }
+    
+    // 결과 로그 출력
+    console.log("최종 파싱 결과:", { orderId, userPhone });
     
     return { orderId, userPhone };
   };
@@ -181,23 +207,23 @@ export default function TshirtPickupPage() {
     setResult(null);
     
     try {
-      // QR 코드 파싱하여 주문 ID와 전화번호 추출
-      const { orderId, userPhone } = parseQRCode(code);
+      console.log("인식된 QR 코드:", code);
       
-      console.log(`파싱된 주문정보 - 주문번호: ${orderId}, 전화번호: ${userPhone}`);
+      // 원본 QR 코드 데이터를 파싱하여 정보만 조회하고 상태는 업데이트하지 않음
+      // 모든 QR 코드 데이터를 API로 바로 전달하되, 두 번째 매개변수로 상태 변경 없음을 지정
+      const verificationResult = await verifyQRCodeAndUpdateStatus(code, null);
       
-      if (!orderId || !userPhone) {
+      // 주문 정보가 조회되면 pendingConfirmation 플래그 추가
+      if (verificationResult.success || verificationResult.orderData) {
         setResult({
-          success: false,
-          message: "QR 코드 형식이 올바르지 않습니다. (예: 123-01012345678)"
+          ...verificationResult,
+          pendingConfirmation: true // 수령 확인 대기 상태 표시
         });
-        return;
+      } else {
+        setResult(verificationResult);
       }
       
-      // API 호출 시 분리된 필드 전달
-      const verificationResult = await verifyQRCodeAndUpdateStatus(orderId, userPhone);
-      
-      setResult(verificationResult);
+      console.log("API 호출 결과:", verificationResult);
     } catch (error) {
       console.error("QR 코드 처리 중 오류:", error);
       setResult({
@@ -216,6 +242,47 @@ export default function TshirtPickupPage() {
     
     setShowModal(true);
     await processQRCode(manualInput);
+  };
+
+  // 수령 확인 처리 함수
+  const handleConfirmPickup = async () => {
+    if (!result || !result.orderData) return;
+    
+    setProcessing(true);
+    
+    try {
+      // 주문 ID만 전달하여 상태 업데이트
+      const orderId = result.orderData.order_id;
+      const updateResult = await updateOrderStatus(orderId, '수령완료');
+      
+      if (updateResult) {
+        // 성공적으로 업데이트된 경우
+        setResult({
+          success: true,
+          message: "티셔츠 수령이 성공적으로 처리되었습니다.",
+          orderData: {
+            ...result.orderData,
+            status: '수령완료'
+          }
+        });
+      } else {
+        // 업데이트 실패한 경우
+        setResult({
+          success: false,
+          message: "수령 처리 중 오류가 발생했습니다.",
+          orderData: result.orderData
+        });
+      }
+    } catch (error) {
+      console.error("수령 확인 처리 중 오류:", error);
+      setResult({
+        success: false,
+        message: "수령 처리 중 오류가 발생했습니다.",
+        orderData: result.orderData
+      });
+    } finally {
+      setProcessing(false);
+    }
   };
 
   // 결과 초기화 및 모달 닫기
@@ -309,24 +376,40 @@ export default function TshirtPickupPage() {
                     <ResultMessage>{result.message}</ResultMessage>
                     
                     {result.success && result.orderData && (
-                      <OrderDetails>
-                        <OrderDetailItem>
-                          <Label>주문번호:</Label>
-                          <Value>#{result.orderData.order_id}</Value>
-                        </OrderDetailItem>
-                        <OrderDetailItem>
-                          <Label>주문자:</Label>
-                          <Value>{result.orderData.name}</Value>
-                        </OrderDetailItem>
-                        <OrderDetailItem>
-                          <Label>연락처:</Label>
-                          <Value>{result.orderData.user_phone}</Value>
-                        </OrderDetailItem>
-                        <OrderDetailItem>
-                          <Label>상태:</Label>
-                          <StatusBadge>{result.orderData.status}</StatusBadge>
-                        </OrderDetailItem>
-                      </OrderDetails>
+                      <>
+                        <OrderDetails>
+                          <OrderDetailItem>
+                            <Label>주문번호:</Label>
+                            <Value>#{result.orderData.order_id}</Value>
+                          </OrderDetailItem>
+                          <OrderDetailItem>
+                            <Label>주문자:</Label>
+                            <Value>{result.orderData.name}</Value>
+                          </OrderDetailItem>
+                          <OrderDetailItem>
+                            <Label>연락처:</Label>
+                            <Value>{result.orderData.user_phone}</Value>
+                          </OrderDetailItem>
+                          <OrderDetailItem>
+                            <Label>상태:</Label>
+                            <StatusBadge>{result.orderData.status}</StatusBadge>
+                          </OrderDetailItem>
+                        </OrderDetails>
+                        
+                        {result.pendingConfirmation && result.orderData.status === '주문확정' && (
+                          <ConfirmButtonWrapper>
+                            <ConfirmButton 
+                              onClick={handleConfirmPickup}
+                              disabled={processing}
+                            >
+                              {processing ? '처리 중...' : '수령 확인 처리하기'}
+                            </ConfirmButton>
+                            <ConfirmHint>
+                              티셔츠를 전달한 후 위 버튼을 클릭하여 수령 처리를 완료하세요.
+                            </ConfirmHint>
+                          </ConfirmButtonWrapper>
+                        )}
+                      </>
                     )}
                     
                     <CloseButton onClick={resetResult}>닫기</CloseButton>
@@ -568,6 +651,7 @@ const ResultMessage = styled.div`
   font-weight: 600;
   color: #1f2937;
   margin-bottom: 16px;
+  word-break: break-all;
 `;
 
 const OrderDetails = styled.div`
@@ -706,4 +790,43 @@ const ErrorHint = styled.p`
   font-weight: 500;
   color: #78350f;
   margin: 0;
+`;
+
+// 추가 스타일 컴포넌트
+const ConfirmButtonWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 16px;
+  width: 100%;
+`;
+
+const ConfirmButton = styled.button`
+  padding: 12px 24px;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  max-width: 300px;
+  margin-bottom: 8px;
+  
+  &:hover:not(:disabled) {
+    background-color: #059669;
+  }
+  
+  &:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+  }
+`;
+
+const ConfirmHint = styled.p`
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+  text-align: center;
 `;

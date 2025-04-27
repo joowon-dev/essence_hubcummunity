@@ -77,10 +77,36 @@ export async function updateOrderStatus(orderId: number, status: string): Promis
 }
 
 // QR 코드 데이터 검증 및 주문 확인
-export async function verifyQRCodeAndUpdateStatus(qrData: string, newStatus: string = '수령완료'): Promise<{success: boolean; message: string; orderData?: any}> {
+export async function verifyQRCodeAndUpdateStatus(qrData: string, newStatus: string | null = '수령완료'): Promise<{success: boolean; message: string; orderData?: any}> {
   try {
-    // QR 코드 데이터 파싱 (형식: orderId-phoneNumber)
-    const [orderIdStr, phoneNumber] = qrData.split('-');
+    console.log("QR 코드 데이터:", qrData);
+    
+    // QR 코드 데이터 파싱 처리 개선
+    // 217-010-3186-0505 형식인 경우도 처리
+    let orderIdStr = '';
+    let phoneNumber = '';
+    
+    // 하이픈으로 분할
+    const parts = qrData.split('-');
+    
+    if (parts.length >= 2) {
+      orderIdStr = parts[0]; // 첫 번째 부분은 항상 주문 ID
+      
+      if (parts.length === 2) {
+        // 217-01031860505 형식 (하이픈 없는 전화번호)
+        phoneNumber = parts[1];
+        
+        // 전화번호에 하이픈 추가 (형식: 010-1234-5678)
+        if (phoneNumber.length === 11) {
+          phoneNumber = `${phoneNumber.substring(0, 3)}-${phoneNumber.substring(3, 7)}-${phoneNumber.substring(7)}`;
+        }
+      } else if (parts.length >= 4) {
+        // 217-010-3186-0505 형식 (하이픈 포함 전화번호)
+        phoneNumber = `${parts[1]}-${parts[2]}-${parts[3]}`;
+      }
+    }
+    
+    console.log(`파싱 결과 - 주문 ID: ${orderIdStr}, 전화번호: ${phoneNumber}`);
     
     if (!orderIdStr || !phoneNumber) {
       return { success: false, message: '잘못된 QR 코드 형식입니다.' };
@@ -93,6 +119,7 @@ export async function verifyQRCodeAndUpdateStatus(qrData: string, newStatus: str
     }
     
     // 주문 정보 조회
+    console.log(`DB 조회 - 주문 ID: ${orderId}, 전화번호: ${phoneNumber}`);
     const { data, error } = await supabase
       .from('orders')
       .select('*')
@@ -101,6 +128,7 @@ export async function verifyQRCodeAndUpdateStatus(qrData: string, newStatus: str
       .single();
       
     if (error || !data) {
+      console.error('주문 조회 오류:', error);
       return { success: false, message: '해당 주문을 찾을 수 없습니다.' };
     }
     
@@ -110,7 +138,17 @@ export async function verifyQRCodeAndUpdateStatus(qrData: string, newStatus: str
         success: false, 
         message: data.status === '수령완료' 
           ? '이미 수령 완료된 주문입니다.'
-          : `현재 주문 상태(${data.status})에서는 수령 처리할 수 없습니다.` 
+          : `현재 주문 상태(${data.status})에서는 수령 처리할 수 없습니다.`,
+        orderData: data // 주문 정보 반환
+      };
+    }
+    
+    // newStatus가 null이면 상태 업데이트 없이 주문 정보만 반환
+    if (newStatus === null) {
+      return { 
+        success: true, 
+        message: '티셔츠 수령 준비가 완료되었습니다. 수령 확인 버튼을 클릭하세요.',
+        orderData: data
       };
     }
     
