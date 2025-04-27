@@ -14,6 +14,7 @@ export default function TshirtPickupPage() {
     message: string;
     orderData?: any;
   } | null>(null);
+  const [showModal, setShowModal] = useState(false);
   const [scannerInitialized, setScannerInitialized] = useState(false);
   const [scannerError, setScannerError] = useState<string | null>(null);
   const scannerRef = useRef<any>(null);
@@ -100,6 +101,23 @@ export default function TshirtPickupPage() {
     };
   }, []); // 의존성 배열 비움 - 마운트 시 한 번만 실행
 
+  // QR 코드 형식 검증 함수
+  const validateQRFormat = (code: string) => {
+    // 주문번호-전화번호 형식 (예: 217-010-3186-0505 또는 217-01031860505)
+    const pattern1 = /^\d+-\d+-\d+-\d+$/;  // 217-010-3186-0505 형식
+    const pattern2 = /^\d+-\d+$/;          // 217-01031860505 형식
+    
+    if (pattern1.test(code)) {
+      // 217-010-3186-0505 형식을 217-01031860505 형식으로 변환
+      const parts = code.split('-');
+      return `${parts[0]}-${parts[1]}${parts[2]}${parts[3]}`;
+    } else if (pattern2.test(code)) {
+      return code;
+    }
+    
+    return code; // 다른 형식은 그대로 반환
+  };
+
   // QR 코드 스캔 처리
   const handleQRCodeScan = async (decodedText: string) => {
     if (processing) return;
@@ -115,8 +133,12 @@ export default function TshirtPickupPage() {
       console.error("스캐너 일시 중지 중 오류:", error);
     }
     
+    // QR 코드 형식 검증 및 변환
+    const formattedCode = validateQRFormat(decodedText);
+    
     setQrData(decodedText);
-    await processQRCode(decodedText);
+    setShowModal(true);
+    await processQRCode(formattedCode);
     
     // 5초 후 스캐너 재시작
     setTimeout(() => {
@@ -154,13 +176,24 @@ export default function TshirtPickupPage() {
     e.preventDefault();
     if (!manualInput.trim() || processing) return;
     
-    await processQRCode(manualInput);
+    // QR 코드 형식 검증 및 변환
+    const formattedCode = validateQRFormat(manualInput);
+    setShowModal(true);
+    await processQRCode(formattedCode);
   };
 
-  // 결과 초기화
+  // 결과 초기화 및 모달 닫기
   const resetResult = () => {
     setResult(null);
     setManualInput('');
+    setShowModal(false);
+  };
+
+  // 모달 외부 클릭 시 닫기
+  const handleModalBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      resetResult();
+    }
   };
 
   return (
@@ -225,34 +258,51 @@ export default function TshirtPickupPage() {
             </ManualForm>
           </Section>
           
-          {result && (
-            <ResultSection success={result.success}>
-              <ResultIcon>{result.success ? '✅' : '❌'}</ResultIcon>
-              <ResultMessage>{result.message}</ResultMessage>
-              
-              {result.success && result.orderData && (
-                <OrderDetails>
-                  <OrderDetailItem>
-                    <Label>주문번호:</Label>
-                    <Value>#{result.orderData.order_id}</Value>
-                  </OrderDetailItem>
-                  <OrderDetailItem>
-                    <Label>주문자:</Label>
-                    <Value>{result.orderData.name}</Value>
-                  </OrderDetailItem>
-                  <OrderDetailItem>
-                    <Label>연락처:</Label>
-                    <Value>{result.orderData.user_phone}</Value>
-                  </OrderDetailItem>
-                  <OrderDetailItem>
-                    <Label>상태:</Label>
-                    <StatusBadge>{result.orderData.status}</StatusBadge>
-                  </OrderDetailItem>
-                </OrderDetails>
-              )}
-              
-              <CloseButton onClick={resetResult}>닫기</CloseButton>
-            </ResultSection>
+          {/* 모달 결과 표시 */}
+          {showModal && (
+            <ModalBackdrop onClick={handleModalBackdropClick}>
+              <ModalContent onClick={e => e.stopPropagation()}>
+                {processing ? (
+                  <ProcessingMessage>
+                    <LoadingSpinner />
+                    주문 정보를 확인 중입니다...
+                  </ProcessingMessage>
+                ) : result ? (
+                  <ResultSection success={result.success}>
+                    <ResultIcon>{result.success ? '✅' : '❌'}</ResultIcon>
+                    <ResultMessage>{result.message}</ResultMessage>
+                    
+                    {result.success && result.orderData && (
+                      <OrderDetails>
+                        <OrderDetailItem>
+                          <Label>주문번호:</Label>
+                          <Value>#{result.orderData.order_id}</Value>
+                        </OrderDetailItem>
+                        <OrderDetailItem>
+                          <Label>주문자:</Label>
+                          <Value>{result.orderData.name}</Value>
+                        </OrderDetailItem>
+                        <OrderDetailItem>
+                          <Label>연락처:</Label>
+                          <Value>{result.orderData.user_phone}</Value>
+                        </OrderDetailItem>
+                        <OrderDetailItem>
+                          <Label>상태:</Label>
+                          <StatusBadge>{result.orderData.status}</StatusBadge>
+                        </OrderDetailItem>
+                      </OrderDetails>
+                    )}
+                    
+                    <CloseButton onClick={resetResult}>닫기</CloseButton>
+                  </ResultSection>
+                ) : (
+                  <ProcessingMessage>
+                    <LoadingSpinner />
+                    잠시만 기다려주세요...
+                  </ProcessingMessage>
+                )}
+              </ModalContent>
+            </ModalBackdrop>
           )}
           
           <Instructions>
@@ -398,6 +448,62 @@ const ManualButton = styled.button`
   &:disabled {
     background-color: #9ca3af;
     cursor: not-allowed;
+  }
+`;
+
+// 모달 관련 스타일
+const ModalBackdrop = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background-color: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  max-width: 90%;
+  width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  
+  @media (max-width: 767px) {
+    max-width: 95%;
+    padding: 16px;
+  }
+`;
+
+const ProcessingMessage = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  font-size: 16px;
+  color: #4b5563;
+  gap: 16px;
+`;
+
+const LoadingSpinner = styled.div`
+  border: 3px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 3px solid #3b82f6;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
 `;
 
