@@ -120,13 +120,12 @@ export const OrderDetail = styled.div`
 `;
 
 export const OrderStatus = styled.div<{ status: string }>`
-  font-size: 16px;
-  font-weight: bold;
-  padding: 4px 8px;
-  border-radius: 4px;
   display: inline-block;
-  margin-bottom: 4px;
-  
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
   ${({ status }) => {
     switch (status) {
       case '입금확인중':
@@ -153,6 +152,11 @@ export const OrderStatus = styled.div<{ status: string }>`
         return `
           background-color: #D1ECF1;
           color: #0C5460;
+        `;
+      case '주문확정':
+        return `
+          background-color: #DC3545;
+          color: #FFFFFF;
         `;
       default:
         return `
@@ -644,9 +648,9 @@ export const OrderCardContainer = styled.div`
 
 export const OrderHeader = styled.div`
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  align-items: center;
+  margin-bottom: 12px;
 `;
 
 export const ColorRow = styled.div`
@@ -1018,4 +1022,48 @@ export const ConfirmNote = styled.p`
   text-align: center;
   margin: 0 0 24px;
   color: #666;
+`;
+
+// 메뉴 그리드
+export const MenuGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+`;
+
+// 메뉴 아이템
+export const MenuItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: #f0f9ff;
+    transform: translateY(-2px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+// 메뉴 아이콘
+export const MenuIcon = styled.div`
+  font-size: 24px;
+  margin-bottom: 8px;
+`;
+
+// 메뉴 텍스트
+export const MenuText = styled.div`
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  text-align: center;
 `; 

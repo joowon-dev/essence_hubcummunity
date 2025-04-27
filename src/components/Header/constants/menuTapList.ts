@@ -11,4 +11,19 @@ export const menuTapList: MenuTapList = [
     title: '티셔츠 예약',
     href: '/tshirt',
   },
+  {
+    type: MenuTapType.DEFAULT,
+    title: '숙소 정보',
+    href: '/accommodation',
+  },
+  {
+    type: MenuTapType.DEFAULT,
+    title: '분실물',
+    href: '/lost-items',
+  },
+  {
+    type: MenuTapType.DEFAULT,
+    title: '식단표',
+    href: '/meals',
+  },
 ];

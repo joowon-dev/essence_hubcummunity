@@ -453,6 +453,27 @@ export default function MyInfoPage() {
     navigateTo('/FAQ');
   };
 
+  // 새로운 메뉴 핸들러 추가
+  const handleMealsClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigateTo('/meals');
+  };
+
+  const handleAccommodationClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigateTo('/accommodation');
+  };
+
+  const handleLostItemsClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigateTo('/lost-items');
+  };
+
+  const handleAnnouncementsClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigateTo('/announcements');
+  };
+
   useEffect(() => {
     // 세션 초기화 및 페이지 로드 시 인증 상태 검증
     if (typeof window !== 'undefined') {
@@ -824,13 +845,133 @@ export default function MyInfoPage() {
         {showQRCode && (
           <S.ModalContainer>
             <S.ModalSheet>
-              <S.ModalTitle>QR 코드</S.ModalTitle>
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0' }}>
+              <S.ModalTitle>교환권</S.ModalTitle>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0' }}>
                 <img 
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${selectedQRData}`} 
                   alt="QR 코드" 
                   style={{ width: '200px', height: '200px' }} 
                 />
+                
+                {/* 수동 입력용 코드 표시 */}
+                <div style={{ 
+                  marginTop: '15px', 
+                  padding: '10px', 
+                  backgroundColor: '#f0f9ff', 
+                  borderRadius: '8px',
+                  border: '1px solid #bae6fd',
+                  textAlign: 'center',
+                  width: '100%',
+                  maxWidth: '300px'
+                }}>
+                  <div style={{ 
+                    fontSize: '20px', 
+                    fontWeight: 'bold', 
+                    color: '#1e40af',
+                    padding: '5px',
+                    letterSpacing: '0.5px'
+                  }}>
+                    {selectedQRData}
+                  </div>
+                </div>
+                
+                {/* 주문 정보 표시 */}
+                {tshirtOrders.map(order => {
+                  const [orderId] = selectedQRData.split('-');
+                  if (order.order_id.toString() === orderId) {
+                    return (
+                      <div key={order.order_id} style={{
+                        marginTop: '20px',
+                        width: '100%',
+                        maxWidth: '300px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        padding: '15px'
+                      }}>
+                        {/* 주문자 정보 - 크게 표시 */}
+                        <div style={{ 
+                          fontSize: '24px', 
+                          fontWeight: 'bold',
+                          color: '#1f2937',
+                          textAlign: 'center',
+                          marginBottom: '20px',
+                          padding: '12px',
+                          backgroundColor: '#f9fafb',
+                          borderRadius: '6px'
+                        }}>
+                          {order.name}
+                        </div>
+                        
+                        {/* 주문 상품 정보 - 크게 표시 */}
+                        <div style={{ 
+                          marginTop: '15px', 
+                          marginBottom: '20px',
+                          padding: '15px',
+                          backgroundColor: '#f9fafb',
+                          borderRadius: '6px'
+                        }}>
+                          {Array.from(new Set(order.items.map(item => item.color))).map((color) => (
+                            <div key={color} style={{ 
+                              marginBottom: '15px',
+                              backgroundColor: '#ffffff',
+                              padding: '10px',
+                              borderRadius: '6px',
+                              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
+                            }}>
+                              <div style={{ 
+                                color: '#1f2937', 
+                                fontSize: '22px', 
+                                fontWeight: '700',
+                                marginBottom: '5px',
+                                textAlign: 'center'
+                              }}>
+                                {color}
+                              </div>
+                              <div style={{ 
+                                color: '#4b5563', 
+                                fontSize: '18px', 
+                                fontWeight: '500',
+                                textAlign: 'center'
+                              }}>
+                                {order.items
+                                  .filter(item => item.color === color)
+                                  .map(item => `${item.size} ${item.quantity}개`)
+                                  .join(', ')}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {/* 기타 정보 - 작게 표시 */}
+                        <div style={{ 
+                          fontSize: '12px', 
+                          color: '#6b7280',
+                          borderTop: '1px solid #e5e7eb',
+                          paddingTop: '10px',
+                          display: 'flex',
+                          justifyContent: 'space-between'
+                        }}>
+                          <span>주문번호: #{order.order_id}</span>
+                          <span>상태: 
+                            <span style={{ 
+                              display: 'inline-block',
+                              marginLeft: '5px',
+                              padding: '2px 6px',
+                              backgroundColor: getStatusColor(order.status),
+                              color: order.status === '주문확정' ? '#ffffff' : 'inherit',
+                              borderRadius: '4px',
+                              fontSize: '11px',
+                              fontWeight: '500'
+                            }}>
+                              {order.status}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })}
               </div>
               <S.ButtonGroup>
                 <S.CancelButton onClick={handleCloseQRCode}>닫기</S.CancelButton>
@@ -1028,7 +1169,37 @@ export default function MyInfoPage() {
             )}
           </S.Section>
 
-          <S.FaqButton onClick={handleFaqClick}>FAQ</S.FaqButton>
+          {/* 새로운 메뉴 섹션 추가 */}
+          <S.Section>
+            <S.SectionTitle>허브업 정보</S.SectionTitle>
+            <S.MenuGrid>
+              <S.MenuItem onClick={handleMealsClick}>
+                <S.MenuIcon>🍽️</S.MenuIcon>
+                <S.MenuText>식단표</S.MenuText>
+              </S.MenuItem>
+              
+              <S.MenuItem onClick={handleAccommodationClick}>
+                <S.MenuIcon>🏠</S.MenuIcon>
+                <S.MenuText>숙소 정보</S.MenuText>
+              </S.MenuItem>
+              
+              <S.MenuItem onClick={handleLostItemsClick}>
+                <S.MenuIcon>🔍</S.MenuIcon>
+                <S.MenuText>분실물</S.MenuText>
+              </S.MenuItem>
+              
+              <S.MenuItem onClick={handleAnnouncementsClick}>
+                <S.MenuIcon>📢</S.MenuIcon>
+                <S.MenuText>공지사항</S.MenuText>
+              </S.MenuItem>
+              
+              <S.MenuItem onClick={handleFaqClick}>
+                <S.MenuIcon>❓</S.MenuIcon>
+                <S.MenuText>FAQ</S.MenuText>
+              </S.MenuItem>
+            </S.MenuGrid>
+          </S.Section>
+
           <S.LogoutButton onClick={logout}>로그아웃</S.LogoutButton>    
         </S.Content>
       </S.Container>

@@ -118,7 +118,7 @@ export const ContentsWrap = styled.div`
   padding-top: 10px;
   margin-bottom: 0px;
 
-  height: 108px;
+  height: 268px;
 `;
 
 export const MenuTitlesWrap = styled.div`

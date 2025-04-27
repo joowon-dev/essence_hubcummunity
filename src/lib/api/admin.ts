@@ -76,6 +76,66 @@ export async function updateOrderStatus(orderId: number, status: string): Promis
   }
 }
 
+// QR 코드 데이터 검증 및 주문 확인
+export async function verifyQRCodeAndUpdateStatus(qrData: string, newStatus: string = '수령완료'): Promise<{success: boolean; message: string; orderData?: any}> {
+  try {
+    // QR 코드 데이터 파싱 (형식: orderId-phoneNumber)
+    const [orderIdStr, phoneNumber] = qrData.split('-');
+    
+    if (!orderIdStr || !phoneNumber) {
+      return { success: false, message: '잘못된 QR 코드 형식입니다.' };
+    }
+    
+    const orderId = parseInt(orderIdStr);
+    
+    if (isNaN(orderId)) {
+      return { success: false, message: '주문 번호가 올바르지 않습니다.' };
+    }
+    
+    // 주문 정보 조회
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('order_id', orderId)
+      .eq('user_phone', phoneNumber)
+      .single();
+      
+    if (error || !data) {
+      return { success: false, message: '해당 주문을 찾을 수 없습니다.' };
+    }
+    
+    // 주문 상태가 '주문확정'이 아니면 오류 반환
+    if (data.status !== '주문확정') {
+      return { 
+        success: false, 
+        message: data.status === '수령완료' 
+          ? '이미 수령 완료된 주문입니다.'
+          : `현재 주문 상태(${data.status})에서는 수령 처리할 수 없습니다.` 
+      };
+    }
+    
+    // 주문 상태 업데이트
+    const updateResult = await updateOrderStatus(orderId, newStatus);
+    
+    if (!updateResult) {
+      return { success: false, message: '주문 상태 업데이트에 실패했습니다.' };
+    }
+    
+    // 주문 정보 반환
+    return { 
+      success: true, 
+      message: '티셔츠 수령이 확인되었습니다.',
+      orderData: {
+        ...data,
+        status: newStatus
+      }
+    };
+  } catch (error) {
+    console.error('QR 코드 검증 중 오류:', error);
+    return { success: false, message: '처리 중 오류가 발생했습니다.' };
+  }
+}
+
 // 주문 상세 정보 가져오기
 export async function getOrderDetails(orderId: number): Promise<OrderItem | null> {
   try {
@@ -148,7 +208,7 @@ export async function getOrderStatusStats(): Promise<Record<string, number>> {
 
     if (error) {
       console.error('주문 상태 통계 조회 오류:', error);
-      return { '미입금': 0, '입금확인중': 0, '입금완료': 0, '주문확정': 0, '취소됨': 0 };
+      return { '미입금': 0, '입금확인중': 0, '입금완료': 0, '주문확정': 0, '수령완료': 0, '취소됨': 0 };
     }
 
     const stats: Record<string, number> = { 
@@ -156,6 +216,7 @@ export async function getOrderStatusStats(): Promise<Record<string, number>> {
       '입금확인중': 0, 
       '입금완료': 0, 
       '주문확정': 0,
+      '수령완료': 0,
       '취소됨': 0 
     };
     
@@ -171,7 +232,7 @@ export async function getOrderStatusStats(): Promise<Record<string, number>> {
     return stats;
   } catch (error) {
     console.error('주문 상태 통계 조회 중 오류:', error);
-    return { '미입금': 0, '입금확인중': 0, '입금완료': 0, '주문확정': 0, '취소됨': 0 };
+    return { '미입금': 0, '입금확인중': 0, '입금완료': 0, '주문확정': 0, '수령완료': 0, '취소됨': 0 };
   }
 }
 
@@ -243,6 +304,7 @@ export async function getTshirtOrderStats(): Promise<any> {
       '입금확인중': Record<string, number>;
       '입금완료': Record<string, number>;
       '주문확정': Record<string, number>;
+      '수령완료': Record<string, number>;
       '취소됨': Record<string, number>;
       '합계': Record<string, number>;
       [key: string]: Record<string, number>;
@@ -251,6 +313,7 @@ export async function getTshirtOrderStats(): Promise<any> {
       '입금확인중': {},
       '입금완료': {},
       '주문확정': {},
+      '수령완료': {},
       '취소됨': {},
       '합계': {}
     };
@@ -262,6 +325,7 @@ export async function getTshirtOrderStats(): Promise<any> {
       stats['입금확인중'][key] = 0;
       stats['입금완료'][key] = 0;
       stats['주문확정'][key] = 0;
+      stats['수령완료'][key] = 0;
       stats['취소됨'][key] = 0;
       stats['합계'][key] = 0;
     });

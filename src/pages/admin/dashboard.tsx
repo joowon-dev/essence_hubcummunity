@@ -5,6 +5,19 @@ import { getOrderStatusStats, getTshirtOrderStats } from '@src/lib/api/admin';
 import Head from 'next/head';
 import Link from 'next/link';
 import { usePageTransition } from '@src/hooks/usePageTransition';
+import { 
+  RiDashboardLine, 
+  RiShirtLine, 
+  RiQrCodeLine, 
+  RiTeamLine, 
+  RiFileTextLine, 
+  RiCalendarLine,
+  RiQuestionLine, 
+  RiFileExcel2Line,
+  RiBuildingLine,
+  RiSearchLine,
+  RiNotification3Line
+} from 'react-icons/ri';
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<Record<string, number>>({
@@ -12,13 +25,14 @@ export default function AdminDashboardPage() {
     '입금확인중': 0,
     '입금완료': 0,
     '주문확정': 0,
+    '수령완료': 0,
     '취소됨': 0
   });
   const [loading, setLoading] = useState(true);
   const [orderStats, setOrderStats] = useState<any>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const { navigateTo } = usePageTransition();
-  const [selectedStatusFilters, setSelectedStatusFilters] = useState<string[]>(['미입금', '입금확인중', '입금완료', '주문확정', '취소됨']);
+  const [selectedStatusFilters, setSelectedStatusFilters] = useState<string[]>(['미입금', '입금확인중', '입금완료', '주문확정', '수령완료', '취소됨']);
   
   useEffect(() => {
     const loadStats = async () => {
@@ -109,10 +123,10 @@ export default function AdminDashboardPage() {
 
   // 모든 필터 선택/해제 핸들러
   const toggleAllFilters = () => {
-    if (selectedStatusFilters.length === 5) { // 모든 필터가 선택된 상태
+    if (selectedStatusFilters.length === 6) { // 모든 필터가 선택된 상태
       setSelectedStatusFilters([]);
     } else {
-      setSelectedStatusFilters(['미입금', '입금확인중', '입금완료', '주문확정', '취소됨']);
+      setSelectedStatusFilters(['미입금', '입금확인중', '입금완료', '주문확정', '수령완료', '취소됨']);
     }
   };
 
@@ -160,6 +174,12 @@ export default function AdminDashboardPage() {
               </StatCard>
               
               <StatCard>
+                <StatTitle>수령완료</StatTitle>
+                <StatValue color="#8b5cf6">{stats['수령완료'] || 0}</StatValue>
+                <StatDescription>수령 완료된 주문</StatDescription>
+              </StatCard>
+              
+              <StatCard>
                 <StatTitle>취소됨</StatTitle>
                 <StatValue color="#6b7280">{stats['취소됨']}</StatValue>
                 <StatDescription>취소된 주문</StatDescription>
@@ -187,7 +207,7 @@ export default function AdminDashboardPage() {
                   <StatusFilterButtonGroup>
                     <StatusFilterButton 
                       onClick={toggleAllFilters}
-                      isSelected={selectedStatusFilters.length === 5}
+                      isSelected={selectedStatusFilters.length === 6}
                     >
                       전체
                     </StatusFilterButton>
@@ -218,6 +238,13 @@ export default function AdminDashboardPage() {
                       color="#3b82f6"
                     >
                       주문확정
+                    </StatusFilterButton>
+                    <StatusFilterButton 
+                      onClick={() => toggleStatusFilter('수령완료')}
+                      isSelected={selectedStatusFilters.includes('수령완료')}
+                      color="#8b5cf6"
+                    >
+                      수령완료
                     </StatusFilterButton>
                     <StatusFilterButton 
                       onClick={() => toggleStatusFilter('취소됨')}
@@ -359,8 +386,26 @@ export default function AdminDashboardPage() {
                 <QuickActionCard>
                   <a href="/admin/tshirtsorder" onClick={(e) => handleNavigate('/admin/tshirtsorder', e)}>
                     <QuickActionContent>
-                      <QuickActionIcon>📦</QuickActionIcon>
+                      <QuickActionIcon><RiShirtLine size={20} /></QuickActionIcon>
                       <QuickActionText>티셔츠 주문 관리</QuickActionText>
+                    </QuickActionContent>
+                  </a>
+                </QuickActionCard>
+                
+                <QuickActionCard>
+                  <a href="/admin/tshirt-pickup" onClick={(e) => handleNavigate('/admin/tshirt-pickup', e)}>
+                    <QuickActionContent>
+                      <QuickActionIcon><RiQrCodeLine size={20} /></QuickActionIcon>
+                      <QuickActionText>티셔츠 수령 확인</QuickActionText>
+                    </QuickActionContent>
+                  </a>
+                </QuickActionCard>
+                
+                <QuickActionCard>
+                  <a href="/admin/members" onClick={(e) => handleNavigate('/admin/members', e)}>
+                    <QuickActionContent>
+                      <QuickActionIcon><RiTeamLine size={20} /></QuickActionIcon>
+                      <QuickActionText>허브 회원 관리</QuickActionText>
                     </QuickActionContent>
                   </a>
                 </QuickActionCard>
@@ -368,7 +413,7 @@ export default function AdminDashboardPage() {
                 <QuickActionCard>
                   <a href="/admin/schedules" onClick={(e) => handleNavigate('/admin/schedules', e)}>
                     <QuickActionContent>
-                      <QuickActionIcon>📅</QuickActionIcon>
+                      <QuickActionIcon><RiCalendarLine size={20} /></QuickActionIcon>
                       <QuickActionText>스케줄 관리</QuickActionText>
                     </QuickActionContent>
                   </a>
@@ -377,8 +422,35 @@ export default function AdminDashboardPage() {
                 <QuickActionCard>
                   <a href="/admin/meals" onClick={(e) => handleNavigate('/admin/meals', e)}>
                     <QuickActionContent>
-                      <QuickActionIcon>🍲</QuickActionIcon>
+                      <QuickActionIcon><RiFileTextLine size={20} /></QuickActionIcon>
                       <QuickActionText>식단표 관리</QuickActionText>
+                    </QuickActionContent>
+                  </a>
+                </QuickActionCard>
+                
+                <QuickActionCard>
+                  <a href="/admin/accommodations" onClick={(e) => handleNavigate('/admin/accommodations', e)}>
+                    <QuickActionContent>
+                      <QuickActionIcon><RiBuildingLine size={20} /></QuickActionIcon>
+                      <QuickActionText>숙소 관리</QuickActionText>
+                    </QuickActionContent>
+                  </a>
+                </QuickActionCard>
+                
+                <QuickActionCard>
+                  <a href="/admin/lost-items" onClick={(e) => handleNavigate('/admin/lost-items', e)}>
+                    <QuickActionContent>
+                      <QuickActionIcon><RiSearchLine size={20} /></QuickActionIcon>
+                      <QuickActionText>분실물 관리</QuickActionText>
+                    </QuickActionContent>
+                  </a>
+                </QuickActionCard>
+                
+                <QuickActionCard>
+                  <a href="/admin/announcements" onClick={(e) => handleNavigate('/admin/announcements', e)}>
+                    <QuickActionContent>
+                      <QuickActionIcon><RiNotification3Line size={20} /></QuickActionIcon>
+                      <QuickActionText>공지사항 관리</QuickActionText>
                     </QuickActionContent>
                   </a>
                 </QuickActionCard>
@@ -386,7 +458,7 @@ export default function AdminDashboardPage() {
                 <QuickActionCard>
                   <a href="/admin/inquiries" onClick={(e) => handleNavigate('/admin/inquiries', e)}>
                     <QuickActionContent>
-                      <QuickActionIcon>📝</QuickActionIcon>
+                      <QuickActionIcon><RiQuestionLine size={20} /></QuickActionIcon>
                       <QuickActionText>문의사항 관리</QuickActionText>
                     </QuickActionContent>
                   </a>
@@ -395,7 +467,7 @@ export default function AdminDashboardPage() {
                 <QuickActionCard>
                   <a href="/admin/faqs" onClick={(e) => handleNavigate('/admin/faqs', e)}>
                     <QuickActionContent>
-                      <QuickActionIcon>❓</QuickActionIcon>
+                      <QuickActionIcon><RiQuestionLine size={20} /></QuickActionIcon>
                       <QuickActionText>FAQ 관리</QuickActionText>
                     </QuickActionContent>
                   </a>
@@ -404,7 +476,7 @@ export default function AdminDashboardPage() {
                 <QuickActionCard>
                   <a href="/admin/spreadsheet" onClick={(e) => handleNavigate('/admin/spreadsheet', e)}>
                     <QuickActionContent>
-                      <QuickActionIcon>📊</QuickActionIcon>
+                      <QuickActionIcon><RiFileExcel2Line size={20} /></QuickActionIcon>
                       <QuickActionText>스프레드시트 동기화</QuickActionText>
                     </QuickActionContent>
                   </a>
@@ -644,6 +716,7 @@ const StatusBadge = styled.span<{ status: string }>`
       case '입금완료': return '#10b981';
       case '주문확정': return '#3b82f6';
       case '주문확정합계': return '#3b82f6';
+      case '수령완료': return '#8b5cf6';
       case '취소됨': return '#6b7280';
       case '합계': return '#3b82f6';
       default: return '#6b7280';
@@ -678,13 +751,14 @@ const QuickActionCard = styled.div`
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    border-color: #d1d5db;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
   
   a {
     text-decoration: none;
     color: inherit;
+    display: block;
+    padding: 16px;
   }
 `;
 
