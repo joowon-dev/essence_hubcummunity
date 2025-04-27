@@ -5,6 +5,12 @@ import AdminLayout from '@src/components/AdminLayout';
 import { verifyQRCodeAndUpdateStatus } from '@src/lib/api/admin';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 
+// verifyQRCodeAndUpdateStatus 함수 타입 선언 추가
+interface VerificationParams {
+  orderId: string;
+  userPhone: string;
+}
+
 export default function TshirtPickupPage() {
   const [qrData, setQrData] = useState('');
   const [manualInput, setManualInput] = useState('');
@@ -102,20 +108,40 @@ export default function TshirtPickupPage() {
   }, []); // 의존성 배열 비움 - 마운트 시 한 번만 실행
 
   // QR 코드 형식 검증 함수
-  const validateQRFormat = (code: string) => {
-    // 주문번호-전화번호 형식 (예: 217-010-3186-0505 또는 217-01031860505)
-    const pattern1 = /^\d+-\d+-\d+-\d+$/;  // 217-010-3186-0505 형식
-    const pattern2 = /^\d+-\d+$/;          // 217-01031860505 형식
+  const parseQRCode = (code: string) => {
+    // 다양한 QR 코드 포맷 처리
+    // 포맷 1: "217-010-3186-0505" (주문번호-전화번호 분리된 형태)
+    // 포맷 2: "217-01031860505" (주문번호-전화번호)
     
-    if (pattern1.test(code)) {
-      // 217-010-3186-0505 형식을 217-01031860505 형식으로 변환
-      const parts = code.split('-');
-      return `${parts[0]}-${parts[1]}${parts[2]}${parts[3]}`;
-    } else if (pattern2.test(code)) {
-      return code;
+    let orderId = '';
+    let userPhone = '';
+    
+    if (!code) return { orderId, userPhone };
+    
+    // 하이픈으로 분리된 부분 확인
+    const parts = code.split('-');
+    
+    if (parts.length === 2) {
+      // 217-01031860505 형식
+      orderId = parts[0].trim();
+      
+      // 전화번호 형식 변환 (01012345678 → 010-1234-5678)
+      const phone = parts[1].trim();
+      if (phone.length === 11) {
+        userPhone = `${phone.substring(0, 3)}-${phone.substring(3, 7)}-${phone.substring(7)}`;
+      } else {
+        userPhone = phone;
+      }
+    } else if (parts.length === 4) {
+      // 217-010-3186-0505 형식
+      orderId = parts[0].trim();
+      userPhone = `${parts[1]}-${parts[2]}-${parts[3]}`;
+    } else {
+      // 다른 형식은 그대로 반환
+      orderId = code;
     }
     
-    return code; // 다른 형식은 그대로 반환
+    return { orderId, userPhone };
   };
 
   // QR 코드 스캔 처리
@@ -133,12 +159,9 @@ export default function TshirtPickupPage() {
       console.error("스캐너 일시 중지 중 오류:", error);
     }
     
-    // QR 코드 형식 검증 및 변환
-    const formattedCode = validateQRFormat(decodedText);
-    
     setQrData(decodedText);
     setShowModal(true);
-    await processQRCode(formattedCode);
+    await processQRCode(decodedText);
     
     // 5초 후 스캐너 재시작
     setTimeout(() => {
@@ -158,7 +181,22 @@ export default function TshirtPickupPage() {
     setResult(null);
     
     try {
-      const verificationResult = await verifyQRCodeAndUpdateStatus(code);
+      // QR 코드 파싱하여 주문 ID와 전화번호 추출
+      const { orderId, userPhone } = parseQRCode(code);
+      
+      console.log(`파싱된 주문정보 - 주문번호: ${orderId}, 전화번호: ${userPhone}`);
+      
+      if (!orderId || !userPhone) {
+        setResult({
+          success: false,
+          message: "QR 코드 형식이 올바르지 않습니다. (예: 123-01012345678)"
+        });
+        return;
+      }
+      
+      // API 호출 시 분리된 필드 전달
+      const verificationResult = await verifyQRCodeAndUpdateStatus(orderId, userPhone);
+      
       setResult(verificationResult);
     } catch (error) {
       console.error("QR 코드 처리 중 오류:", error);
@@ -176,10 +214,8 @@ export default function TshirtPickupPage() {
     e.preventDefault();
     if (!manualInput.trim() || processing) return;
     
-    // QR 코드 형식 검증 및 변환
-    const formattedCode = validateQRFormat(manualInput);
     setShowModal(true);
-    await processQRCode(formattedCode);
+    await processQRCode(manualInput);
   };
 
   // 결과 초기화 및 모달 닫기
@@ -670,4 +706,4 @@ const ErrorHint = styled.p`
   font-weight: 500;
   color: #78350f;
   margin: 0;
-`; 
+`;
