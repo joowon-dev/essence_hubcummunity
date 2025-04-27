@@ -908,19 +908,23 @@ export const CancelOrderButton = styled(CancelButton)`
 `;
 
 export const RedConfirmButton = styled.button`
-  background-color: #ed2725;
-  color: #fff;
-  font-weight: 600;
-  padding: 12px 24px;
-  border-radius: 6px;
+  background-color: #e74c3c;
+  color: white;
   border: none;
-  font-size: 15px;
-  cursor: pointer;
   flex: 1;
-  transition: background-color 0.2s;
+  padding: 12px 16px;
+  border-radius: 4px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
   
-  &:hover {
-    background-color: #d61c1a;
+  &:hover:not(:disabled) {
+    background-color: #c0392b;
+  }
+  
+  &:disabled {
+    background-color: #e57373;
+    cursor: not-allowed;
   }
 `;
 
@@ -1066,4 +1070,20 @@ export const MenuText = styled.div`
   font-weight: 500;
   color: #374151;
   text-align: center;
+`;
+
+export const LoadingSpinner = styled.div`
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+  vertical-align: middle;
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
 `; 

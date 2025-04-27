@@ -76,6 +76,7 @@ export default function MyInfoPage() {
   const { navigateTo } = usePageTransition();
   const [showConfirmOrder, setShowConfirmOrder] = useState(false);
   const [orderToConfirm, setOrderToConfirm] = useState<TshirtOrder | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false); // 주문 확정 로딩 상태 추가
   
   // YYYYMMDD 형식의 문자열을 Date 객체로 변환하는 함수
   const parseDateFromString = (dateString: string) => {
@@ -715,7 +716,9 @@ export default function MyInfoPage() {
 
   // 주문 상태를 주문확정으로 변경
   const confirmOrder = async () => {
-    if (!orderToConfirm) return;
+    if (!orderToConfirm || confirmLoading) return;
+    
+    setConfirmLoading(true); // 로딩 상태 시작
     
     try {
       // 1. 주문 상태를 '주문확정'으로 업데이트
@@ -787,6 +790,8 @@ export default function MyInfoPage() {
     } catch (error) {
       console.error('주문 확정 중 오류 발생:', error);
       alert('주문 확정 처리 중 오류가 발생했습니다.');
+    } finally {
+      setConfirmLoading(false); // 로딩 상태 종료
     }
   };
   
@@ -898,13 +903,21 @@ export default function MyInfoPage() {
               <S.ConfirmNote>주문 확정 후에는 변경이 불가능합니다.</S.ConfirmNote>
               
               <S.ButtonGroup>
-                <S.CancelButton onClick={handleCloseConfirmOrder}>취소</S.CancelButton>
-                <S.RedConfirmButton onClick={confirmOrder}>
-                  확인
+                <S.CancelButton onClick={handleCloseConfirmOrder} disabled={confirmLoading}>취소</S.CancelButton>
+                <S.RedConfirmButton 
+                  onClick={confirmOrder} 
+                  disabled={confirmLoading}
+                >
+                  {confirmLoading ? (
+                    <>
+                      <S.LoadingSpinner />
+                      처리 중...
+                    </>
+                  ) : '확인'}
                 </S.RedConfirmButton>
               </S.ButtonGroup>
             </S.ModalSheet>
-            <S.ModalOverlay onClick={handleCloseConfirmOrder} />
+            <S.ModalOverlay onClick={confirmLoading ? undefined : handleCloseConfirmOrder} />
           </S.ModalContainer>
         )}
         
