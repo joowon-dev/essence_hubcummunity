@@ -718,7 +718,7 @@ export default function MyInfoPage() {
     if (!orderToConfirm) return;
     
     try {
-      // 주문 상태를 '주문확정'으로 업데이트
+      // 1. 주문 상태를 '주문확정'으로 업데이트
       const { error } = await supabase
         .from('orders')
         .update({ status: '주문확정' })
@@ -726,7 +726,53 @@ export default function MyInfoPage() {
         
       if (error) throw error;
       
-      // 로컬 상태 업데이트
+      // 2. confirm_order 테이블에 주문 확정 데이터 저장
+      const confirmOrderData = {
+        order_id: orderToConfirm.order_id,
+        user_phone: phoneNumber,
+        confirm_date: new Date().toISOString(),
+        name: userInfo?.name || '',
+        total_price: orderToConfirm.total_price || calculateTotalPrice(orderToConfirm.items).finalTotal
+      };
+      
+      const { data: confirmData, error: confirmError } = await supabase
+        .from('confirm_order')
+        .insert(confirmOrderData)
+        .select('id')
+        .single();
+      
+      if (confirmError) {
+        console.error('주문 확정 데이터 저장 중 오류:', confirmError);
+        throw confirmError;
+      }
+      
+      // 3. confirm_order_items 테이블에 주문 항목 데이터 저장
+      if (confirmData && confirmData.id) {
+        const confirmId = confirmData.id;
+        
+        // 주문 항목들을 confirm_order_items 테이블에 저장할 데이터로 변환
+        const confirmOrderItems = orderToConfirm.items.map(item => ({
+          confirm_id: confirmId,
+          item_id: item.item_id,
+          size: item.size,
+          color: item.color,
+          quantity: item.quantity,
+          price: item.price || (item.size === '3XL' ? 11000 : 10000)
+        }));
+        
+        // 주문 항목 데이터 저장
+        const { error: itemsError } = await supabase
+          .from('confirm_order_items')
+          .insert(confirmOrderItems);
+        
+        if (itemsError) {
+          console.error('주문 항목 확정 데이터 저장 중 오류:', itemsError);
+          // 주문 항목 저장 실패해도 주문 확정은 유지
+          console.warn('주문 항목 저장에 실패했으나, 주문 확정은 처리되었습니다.');
+        }
+      }
+      
+      // 4. 로컬 상태 업데이트
       const updatedOrders = tshirtOrders.map(order => 
         order.order_id === orderToConfirm.order_id 
           ? { ...order, status: '주문확정' } 
@@ -742,6 +788,26 @@ export default function MyInfoPage() {
       console.error('주문 확정 중 오류 발생:', error);
       alert('주문 확정 처리 중 오류가 발생했습니다.');
     }
+  };
+  
+  // 총 가격 계산 함수 (주문 확정용)
+  const calculateTotalPrice = (items: TshirtOrderItem[]) => {
+    const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+    const baseTotal = items.reduce((sum, item) => {
+      // 3XL은 11,000원, 나머지는 10,000원
+      const itemPrice = item.size === '3XL' ? 11000 : 10000;
+      return sum + (itemPrice * item.quantity);
+    }, 0);
+    
+    // 2장 이상 주문 시 장당 1,000원 할인
+    const discountAmount = totalQuantity >= 2 ? totalQuantity * 1000 : 0;
+    const finalTotal = baseTotal - discountAmount;
+    
+    return {
+      baseTotal,
+      discountAmount,
+      finalTotal
+    };
   };
   
   // 주문 상태에 따른 색상 반환
