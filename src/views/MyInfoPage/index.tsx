@@ -1220,7 +1220,7 @@ export default function MyInfoPage() {
                         onClick={() => handleDotClick(index)}
                       />
                     ))}
-                  </S.Indicators>
+                  </S.Indicators> 
                 )}
                 
                 {/* 변경 가능 기간 안내 */}
