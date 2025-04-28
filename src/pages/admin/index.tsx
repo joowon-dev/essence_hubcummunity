@@ -31,16 +31,13 @@ export default function AdminLoginPage() {
         throw new Error('전화번호와 비밀번호를 모두 입력해주세요.');
       }
       
-      const isLoginSuccessful = await loginAdmin({
-        phoneNumber: phoneNumber.trim(),
-        password: password.trim()
-      });
+      const result = await loginAdmin(phoneNumber.trim(), password.trim());
       
-      if (isLoginSuccessful) {
-        setAdmin(phoneNumber);
+      if (result.success) {
+        setAdmin(phoneNumber.trim());
         router.push('/admin/tshirtsorder');
       } else {
-        throw new Error('로그인에 실패했습니다. 인증 정보를 확인해주세요.');
+        throw new Error(result.error || '로그인에 실패했습니다. 인증 정보를 확인해주세요.');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '로그인 중 오류가 발생했습니다.');

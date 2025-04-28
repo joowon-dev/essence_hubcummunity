@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  // 현재 경로 가져오기
   const url = request.nextUrl.clone();
   const { pathname } = url;
   
@@ -14,22 +13,31 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
   
-  // admin_phone 쿠키로 인증 상태 확인
-  const adminPhone = request.cookies.get('admin_phone')?.value;
-  const sessionExpiry = request.cookies.get('admin_session_expiry')?.value;
-  
-  // 인증 상태 확인 (쿠키가 있고 만료되지 않은 경우)
-  const isAuthenticated = !!(adminPhone && sessionExpiry && parseInt(sessionExpiry) > Date.now());
-  
-  // 인증되지 않은 경우 로그인 페이지로 리디렉션
-  if (!isAuthenticated) {
+  // 세션 확인
+  const session = request.cookies.get('admin_session')?.value;
+  if (!session) {
     url.pathname = loginPath;
-    // 리디렉션 후 로그인 성공 시 돌아올 경로 저장
-    url.searchParams.set('callbackUrl', encodeURI(pathname));
     return NextResponse.redirect(url);
   }
-  
-  return NextResponse.next();
+
+  try {
+    // 세션 검증
+    const sessionData = JSON.parse(session);
+    const currentTime = Date.now();
+    
+    if (!sessionData || !sessionData.expiry || sessionData.expiry < currentTime) {
+      // 세션이 만료되었거나 유효하지 않은 경우
+      url.pathname = loginPath;
+      return NextResponse.redirect(url);
+    }
+
+    // 세션이 유효한 경우 요청을 계속 진행
+    return NextResponse.next();
+  } catch (error) {
+    console.error('Session validation error:', error);
+    url.pathname = loginPath;
+    return NextResponse.redirect(url);
+  }
 }
 
 // /admin 경로와 그 하위 경로에 대해 미들웨어 적용

@@ -1,66 +1,63 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import styled from '@emotion/styled';
-import { message } from 'antd';
 import { loginAdmin } from '@src/lib/api/admin';
-import { useAdminAuthStore, initializeAdminAuthState } from '@src/store/adminAuth';
+import { useAdminAuthStore } from '@src/store/adminAuth';
 import Head from 'next/head';
 
-const AdminLoginPage: React.FC = () => {
+export default function LoginPage() {
   const router = useRouter();
+  const { isAuthenticated, isAdmin, setAdmin, checkSessionExpiry } = useAdminAuthStore();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { isAuthenticated, setAdmin, checkSessionExpiry } = useAdminAuthStore();
-  
+  // 이미 로그인된 경우 대시보드 페이지로 리다이렉트
   useEffect(() => {
-    // 세션 상태 초기화 및 만료 확인
-    initializeAdminAuthState();
-    checkSessionExpiry();
+    const checkSession = async () => {
+      const isSessionValid = await checkSessionExpiry();
+      if (isSessionValid && isAuthenticated && isAdmin) {
+        router.replace('/admin/dashboard');
+      }
+    };
     
-    // 이미 인증되어 있으면 관리자 대시보드로 리디렉션
-    if (isAuthenticated) {
-      router.push('/admin/dashboard');
-    }
-  }, [isAuthenticated, checkSessionExpiry, router]);
+    checkSession();
+  }, [isAuthenticated, isAdmin, router, checkSessionExpiry]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
-    // 입력 검증
-    if (!phoneNumber.trim()) {
-      setError('전화번호를 입력해주세요.');
-      return;
-    }
-    
-    if (!password.trim()) {
-      setError('비밀번호를 입력해주세요.');
-      return;
-    }
+    setLoading(true);
     
     try {
-      setLoading(true);
+      if (!phoneNumber.trim() || !password.trim()) {
+        throw new Error('전화번호와 비밀번호를 모두 입력해주세요.');
+      }
       
-      // 관리자 로그인 처리
-      const success = await loginAdmin({
-        phoneNumber: phoneNumber.trim(),
-        password: password.trim()
-      });
+      const result = await loginAdmin(phoneNumber.trim(), password.trim());
       
-      if (success) {
-        // 인증 상태 설정
+      if (result.success) {
+        // 세션 생성 (30분)
+        const expiryTime = Date.now() + 30 * 60 * 1000; // 30분
+        const sessionData = {
+          phone: phoneNumber.trim(),
+          expiry: expiryTime
+        };
+        
+        // 쿠키에 세션 저장
+        document.cookie = `admin_session=${JSON.stringify(sessionData)}; path=/; max-age=${30 * 60}; SameSite=Lax`;
+        
+        // Zustand 스토어 업데이트
         setAdmin(phoneNumber.trim());
-        message.success('로그인 성공! 관리자 페이지로 이동합니다.');
-        router.push('/admin/dashboard');
+        
+        // 대시보드 페이지로 리디렉션
+        router.replace('/admin/dashboard');
       } else {
-        setError('인증에 실패했습니다. 전화번호와 비밀번호를 확인해주세요.');
+        throw new Error(result.error || '로그인에 실패했습니다. 인증 정보를 확인해주세요.');
       }
     } catch (err) {
-      setError('로그인 처리 중 오류가 발생했습니다.');
-      console.error('로그인 오류:', err);
+      setError(err instanceof Error ? err.message : '로그인 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -71,30 +68,34 @@ const AdminLoginPage: React.FC = () => {
       <Head>
         <title>관리자 로그인 | 허브 커뮤니티</title>
         <meta name="robots" content="noindex, nofollow" />
-        <meta name="description" content="관리자 전용 로그인 페이지입니다." />
       </Head>
+      
       <Container>
         <LoginBox>
           <Title>관리자 로그인</Title>
           
           <Form onSubmit={handleSubmit}>
             <InputGroup>
-              <Label>전화번호</Label>
+              <Label htmlFor="phoneNumber">전화번호</Label>
               <Input
+                id="phoneNumber"
                 type="text"
                 value={phoneNumber}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhoneNumber(e.target.value)}
-                placeholder="전화번호를 입력하세요"
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="01012345678"
+                disabled={loading}
               />
             </InputGroup>
             
             <InputGroup>
-              <Label>비밀번호</Label>
+              <Label htmlFor="password">비밀번호</Label>
               <Input
+                id="password"
                 type="password"
                 value={password}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="비밀번호를 입력하세요"
+                disabled={loading}
               />
             </InputGroup>
             
@@ -104,41 +105,47 @@ const AdminLoginPage: React.FC = () => {
               {loading ? '로그인 중...' : '로그인'}
             </LoginButton>
           </Form>
+          
+          <BackLink onClick={() => router.push('/')}>
+            홈으로 돌아가기
+          </BackLink>
         </LoginBox>
       </Container>
     </>
   );
-};
+}
 
-export default AdminLoginPage;
-
+// 스타일 컴포넌트
 const Container = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
   background-color: #f5f5f5;
+  padding: 16px;
 `;
 
 const LoginBox = styled.div`
-  width: 500px;
-  padding: 40px;
   background-color: white;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 32px;
+  width: 100%;
+  max-width: 400px;
 `;
 
 const Title = styled.h1`
-  text-align: center;
-  margin-bottom: 30px;
   font-size: 24px;
-  color: #333;
+  font-weight: 700;
+  margin-bottom: 24px;
+  text-align: center;
+  color: #000;
 `;
 
 const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 `;
 
 const InputGroup = styled.div`
@@ -148,47 +155,67 @@ const InputGroup = styled.div`
 `;
 
 const Label = styled.label`
-  font-size: 16px;
-  font-weight: 500;
-  color: #555;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
 `;
 
 const Input = styled.input`
-  padding: 12px 16px;
+  padding: 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 16px;
-  transition: border-color 0.2s;
   
   &:focus {
     outline: none;
-    border-color: #1890ff;
-  }
-`;
-
-const ErrorMessage = styled.div`
-  color: #ff4d4f;
-  font-size: 14px;
-  margin-top: -8px;
-`;
-
-const LoginButton = styled.button`
-  padding: 12px 16px;
-  background-color: #1890ff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  
-  &:hover {
-    background-color: #40a9ff;
+    border-color: #000;
   }
   
   &:disabled {
-    background-color: #bfbfbf;
+    background-color: #f5f5f5;
     cursor: not-allowed;
+  }
+`;
+
+const ErrorMessage = styled.p`
+  color: #e53e3e;
+  font-size: 14px;
+  margin-top: 8px;
+`;
+
+const LoginButton = styled.button`
+  background-color: #000;
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  
+  &:hover {
+    background-color: #222;
+  }
+  
+  &:disabled {
+    background-color: #999;
+    cursor: not-allowed;
+  }
+`;
+
+const BackLink = styled.button`
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 14px;
+  text-align: center;
+  cursor: pointer;
+  margin-top: 16px;
+  width: 100%;
+  
+  &:hover {
+    text-decoration: underline;
+    color: #000;
   }
 `; 

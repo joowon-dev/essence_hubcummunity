@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { persist } from "zustand/middleware";
 
 // 로컬 스토리지 접근 함수
 const getStorage = () => {
@@ -13,85 +13,59 @@ const getStorage = () => {
   };
 };
 
-interface AdminAuthStore {
-  phoneNumber: string | null;
+interface AdminAuthState {
   isAuthenticated: boolean;
   isAdmin: boolean;
-  sessionExpiry: number | null;
-  setAdmin: (phoneNumber: string | null) => void;
+  phone: string | null;
+  setAdmin: (phone: string) => void;
   logout: () => void;
-  checkSessionExpiry: () => void;
+  checkSessionExpiry: () => Promise<boolean>;
 }
 
-export const useAdminAuthStore = create<AdminAuthStore>()(
+export const useAdminAuthStore = create<AdminAuthState>()(
   persist(
     (set, get) => ({
-      phoneNumber: null,
       isAuthenticated: false,
       isAdmin: false,
-      sessionExpiry: null,
-      
-      setAdmin: (phoneNumber) => {
-        if (phoneNumber) {
-          // 로그인 시 세션 만료 시간 설정 (현재 시간 + 24시간)
-          const expiryTime = Date.now() + 24 * 60 * 60 * 1000; // 24시간
-          set({ phoneNumber, isAuthenticated: true, isAdmin: true, sessionExpiry: expiryTime });
-          
-          // 직접 로컬 스토리지에도 저장 (이중 보장)
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('admin_phone', phoneNumber);
-            localStorage.setItem('admin_session_expiry', expiryTime.toString());
-          }
-        } else {
-          set({ phoneNumber: null, isAuthenticated: false, isAdmin: false, sessionExpiry: null });
-          
-          // 로컬 스토리지에서도 제거
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('admin_phone');
-            localStorage.removeItem('admin_session_expiry');
-          }
-        }
+      phone: null,
+      setAdmin: (phone: string) => {
+        set({ isAuthenticated: true, isAdmin: true, phone });
       },
-      
       logout: () => {
-        set({ phoneNumber: null, isAuthenticated: false, isAdmin: false, sessionExpiry: null });
-        
-        // 로컬 스토리지에서도 제거
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('admin_phone');
-          localStorage.removeItem('admin_session_expiry');
+        set({ isAuthenticated: false, isAdmin: false, phone: null });
+        document.cookie = 'admin_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      },
+      checkSessionExpiry: async () => {
+        const session = document.cookie.split('; ').find(row => row.startsWith('admin_session='));
+        if (!session) {
+          set({ isAuthenticated: false, isAdmin: false, phone: null });
+          return false;
+        }
+
+        try {
+          const sessionData = JSON.parse(session.split('=')[1]);
+          const currentTime = Date.now();
+          
+          if (!sessionData || !sessionData.expiry || sessionData.expiry < currentTime) {
+            set({ isAuthenticated: false, isAdmin: false, phone: null });
+            document.cookie = 'admin_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            return false;
+          }
+
+          set({ isAuthenticated: true, isAdmin: true, phone: sessionData.phone });
+          return true;
+        } catch (error) {
+          console.error('Session validation error:', error);
+          set({ isAuthenticated: false, isAdmin: false, phone: null });
+          return false;
         }
       },
-      
-      checkSessionExpiry: () => {
-        const { sessionExpiry, logout, phoneNumber } = get();
-        
-        // 로그인 정보가 없지만 로컬 스토리지에 있는 경우 복원
-        if (!phoneNumber && typeof window !== 'undefined') {
-          const storedPhone = localStorage.getItem('admin_phone');
-          const storedExpiry = localStorage.getItem('admin_session_expiry');
-          
-          if (storedPhone && storedExpiry) {
-            const expiryTime = parseInt(storedExpiry);
-            if (Date.now() <= expiryTime) {
-              // 유효한 세션이면 상태 복원
-              set({ phoneNumber: storedPhone, isAuthenticated: true, isAdmin: true, sessionExpiry: expiryTime });
-              return;
-            }
-          }
-        }
-        
-        // 세션 만료 확인
-        if (sessionExpiry && Date.now() > sessionExpiry) {
-          // 세션이 만료되었으면 로그아웃
-          logout();
-        }
-      }
     }),
     {
-      name: "admin-auth-storage", // 로컬 스토리지 키 이름
-      storage: createJSONStorage(() => getStorage()), // 안전한 스토리지 접근
-      skipHydration: true, // 하이드레이션 문제 방지
+      name: "admin-auth-storage",
+      partialize: (state) => ({
+        phone: state.phone,
+      })
     }
   )
 );
@@ -110,10 +84,9 @@ export const initializeAdminAuthState = () => {
       // 세션이 유효한 경우에만 상태 설정
       if (Date.now() <= expiryTime) {
         useAdminAuthStore.setState({ 
-          phoneNumber: storedPhone, 
+          phone: storedPhone, 
           isAuthenticated: true, 
           isAdmin: true,
-          sessionExpiry: expiryTime 
         });
         console.log('초기화 함수: 관리자 인증 상태가 복원되었습니다');
         return true;

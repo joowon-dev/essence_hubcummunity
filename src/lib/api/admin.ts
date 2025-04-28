@@ -15,26 +15,36 @@ export interface OrderItem {
   name: string;
 }
 
+export interface LoginResult {
+  success: boolean;
+  error?: string;
+}
+
 // 관리자 로그인
-export async function loginAdmin(credentials: AdminLoginCredentials): Promise<boolean> {
+export const loginAdmin = async (phone: string, password: string): Promise<LoginResult> => {
   try {
     const { data, error } = await supabase
       .from('admin_users')
-      .select('phone_number')
-      .eq('phone_number', credentials.phoneNumber)
-      .eq('password', credentials.password);
+      .select('*')
+      .eq('phone_number', phone)
+      .eq('password', password)
+      .single();
 
-    if (error || !data || data.length === 0) {
-      console.error('관리자 로그인 오류:', error);
-      return false;
+    if (error) {
+      console.error('Login error:', error);
+      return { success: false, error: '로그인 중 오류가 발생했습니다.' };
     }
 
-    return true;
-  } catch (error) {
-    console.error('관리자 로그인 처리 중 오류:', error);
-    return false;
+    if (!data) {
+      return { success: false, error: '전화번호 또는 비밀번호가 올바르지 않습니다.' };
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error('Login error:', err);
+    return { success: false, error: '로그인 처리 중 오류가 발생했습니다.' };
   }
-}
+};
 
 // 티셔츠 주문 목록 가져오기
 export async function getTshirtOrders(): Promise<OrderItem[]> {
