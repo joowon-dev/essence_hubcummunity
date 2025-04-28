@@ -63,8 +63,10 @@ export default function AdminDashboardPage() {
   // 취소된 주문을 제외한 유효 주문 수
   const validOrders = totalOrders - stats['취소됨'];
   
-  // 완료율 계산 (완료 주문 수 / 취소된 주문을 제외한 유효 주문 수)
-  const completionRate = validOrders > 0 ? Math.round((stats['입금완료'] / validOrders) * 100) : 0;
+  // 완료율 계산 (입금완료 + 주문확정 주문 수 / 취소된 주문을 제외한 유효 주문 수)
+  const completionRate = validOrders > 0 
+    ? Math.round(((stats['입금완료'] + (stats['주문확정'] || 0)) / validOrders) * 100) 
+    : 0;
   
   // 합계 계산 함수 (취소됨 상태 제외)
   const calculateTotalWithoutCancelled = (status: string) => {
@@ -130,6 +132,35 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // 데이터 검증 함수
+  const validateData = () => {
+    const errors: string[] = [];
+    
+    // 전체 주문 수 검증
+    const calculatedTotal = Object.values(stats).reduce((sum, count) => sum + count, 0);
+    if (calculatedTotal !== totalOrders) {
+      errors.push(`전체 주문 수 불일치: 계산된 값(${calculatedTotal}) vs 표시된 값(${totalOrders})`);
+    }
+    
+    // 상태별 합계 검증
+    if (orderStats && orderStats.stats) {
+      Object.entries(orderStats.stats as Record<string, Record<string, number>>).forEach(([status, data]) => {
+        const calculatedSum = Object.values(data).reduce((sum: number, val: number) => 
+          sum + (typeof val === 'number' ? val : 0), 0);
+        const displayedSum = calculateTotalWithoutCancelled(status);
+        
+        if (calculatedSum !== displayedSum) {
+          errors.push(`${status} 합계 불일치: 계산된 값(${calculatedSum}) vs 표시된 값(${displayedSum})`);
+        }
+      });
+    }
+    
+    return errors;
+  };
+
+  // 데이터 검증 실행
+  const dataErrors = validateData();
+
   return (
     <>
       <Head>
@@ -142,6 +173,18 @@ export default function AdminDashboardPage() {
           <LoadingMessage>통계 정보를 불러오는 중...</LoadingMessage>
         ) : (
           <>
+            {/* 데이터 검증 결과 표시 */}
+            {dataErrors.length > 0 && (
+              <ValidationAlert>
+                <ValidationTitle>데이터 검증 경고</ValidationTitle>
+                <ValidationList>
+                  {dataErrors.map((error, index) => (
+                    <ValidationItem key={index}>{error}</ValidationItem>
+                  ))}
+                </ValidationList>
+              </ValidationAlert>
+            )}
+            
             <StatCardsContainer>
               <StatCard>
                 <StatTitle>전체 주문</StatTitle>
@@ -187,11 +230,14 @@ export default function AdminDashboardPage() {
             </StatCardsContainer>
             
             <CompletionRateCard>
-              <CompletionRateTitle>입금 완료율</CompletionRateTitle>
+              <CompletionRateTitle>입금/확정 완료율</CompletionRateTitle>
               <CompletionRateValue>{completionRate}%</CompletionRateValue>
               <ProgressBarContainer>
                 <ProgressBar width={`${completionRate}%`} />
               </ProgressBarContainer>
+              <CompletionRateDescription>
+                (입금완료 + 주문확정) / 전체 유효 주문
+              </CompletionRateDescription>
             </CompletionRateCard>
             
             {/* 티셔츠 주문 통계 테이블 */}
@@ -318,33 +364,7 @@ export default function AdminDashboardPage() {
                           </StatisticsTableCell>
                         </StatisticsTableRow>
                       ))}
-                      {/* 주문확정 합계 (필터링 적용) */}
-                      {selectedStatusFilters.includes('주문확정') && selectedStatusFilters.length > 1 && (
-                        <StatisticsTableRow>
-                          <StatisticsTableCell>
-                            <StatusBadge status="주문확정합계">주문확정 합계</StatusBadge>
-                          </StatisticsTableCell>
-                          {colorOrder.map(color => (
-                            sizeOrder.map(size => {
-                              const key = `${size}|${color}`;
-                              const total = orderStats.stats['주문확정']?.[key] || 0;
-                              return (
-                                <StatisticsTableCell 
-                                  key={key}
-                                  highlighted={true}
-                                  specialColor="#3b82f6"
-                                >
-                                  {total}
-                                </StatisticsTableCell>
-                              );
-                            })
-                          ))}
-                          <StatisticsTableCell highlighted={true} specialColor="#3b82f6">
-                            {calculateTotalWithoutCancelled('주문확정')}
-                          </StatisticsTableCell>
-                        </StatisticsTableRow>
-                      )}
-                      {/* 유효 합계 행 (필터링에 따라 계산이 달라짐) */}
+                      {/* 유효 합계 행 */}
                       <StatisticsTableRow>
                         <StatisticsTableCell>
                           <StatusBadge status="합계">유효 합계</StatusBadge>
@@ -352,7 +372,6 @@ export default function AdminDashboardPage() {
                         {colorOrder.map(color => (
                           sizeOrder.map(size => {
                             const key = `${size}|${color}`;
-                            // 필터링된 상태만 합산 (취소됨 제외)
                             const total = selectedStatusFilters
                               .filter(status => status !== '취소됨')
                               .reduce((sum, status) => 
@@ -779,4 +798,42 @@ const QuickActionText = styled.div`
   font-size: 14px;
   font-weight: 500;
   color: #374151;
+`;
+
+// 데이터 검증 관련 스타일 추가
+const ValidationAlert = styled.div`
+  background-color: #fef3c7;
+  border: 1px solid #fbbf24;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+`;
+
+const ValidationTitle = styled.h4`
+  color: #92400e;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+`;
+
+const ValidationList = styled.ul`
+  margin: 0;
+  padding-left: 20px;
+`;
+
+const ValidationItem = styled.li`
+  color: #92400e;
+  font-size: 14px;
+  margin-bottom: 4px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const CompletionRateDescription = styled.p`
+  font-size: 12px;
+  color: #6b7280;
+  margin: 8px 0 0 0;
+  text-align: center;
 `; 
