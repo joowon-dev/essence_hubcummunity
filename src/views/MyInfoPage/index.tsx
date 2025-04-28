@@ -418,7 +418,7 @@ export default function MyInfoPage() {
   // 사이즈 변경 페이지로 이동
   const handleSizeChange = (order: TshirtOrder) => {
     // order_id를 쿼리 파라미터로 전달
-    router.push(`/tshirt/edit?order_id=${order.order_id}`);
+    //router.push(`/tshirt/edit?order_id=${order.order_id}`);
   };
 
   // 마감일 지났는지 체크하는 함수
@@ -1189,13 +1189,14 @@ export default function MyInfoPage() {
                           {/* 취소된 항목은 버튼 제거, 상세정보 보기 등 */}
                           {order.status !== '취소됨' && !isDeadlinePassed() && (
                             order.status === '입금완료' ? (
-                              <S.ViewDetailText onClick={(e) => {
-                                e.stopPropagation(); // 부모 onClick 이벤트 방지
-                                handleSizeChange(order);
-                              }}>
-                                변경하기
-                                <S.ViewDetailIcon>›</S.ViewDetailIcon>
-                              </S.ViewDetailText>
+                              <></>
+                              // <S.ViewDetailText onClick={(e) => {
+                              //   e.stopPropagation(); // 부모 onClick 이벤트 방지
+                              //   handleSizeChange(order);
+                              // }}>
+                              //   변경하기
+                              //   <S.ViewDetailIcon>›</S.ViewDetailIcon>
+                              // </S.ViewDetailText>
                             ) : (
                               <S.ViewDetailText>
                                 상세정보 보기

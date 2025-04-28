@@ -6,6 +6,7 @@ import OrderSheet from './components/OrderSheet';
 import ImageSlider from './components/ImageSlider';
 import { useRouter } from 'next/router';
 import { useQuery } from '@tanstack/react-query';
+import styled from '@emotion/styled';
 
 interface TshirtData {
   id: number;
@@ -54,6 +55,29 @@ const PRICE_INFO: PriceInfo = {
     { size: '3XL', price: 11000 }
   ]
 };
+
+const OrderButton = styled.button`
+  width: 100%;
+  padding: 1rem;
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  
+  &:hover {
+    background-color: #40a9ff;
+  }
+  
+  &:disabled {
+    background-color: #d9d9d9;
+    color: rgba(0, 0, 0, 0.25);
+    cursor: not-allowed;
+  }
+`;
 
 export default function TshirtPage() {
   const [selectedSize, setSelectedSize] = useState('');
@@ -275,7 +299,7 @@ export default function TshirtPage() {
             </S.SizeGuide>
 
             <S.ButtonGroup>
-              <S.OrderButton onClick={handleOrder}>예약하기 →</S.OrderButton>
+              <S.OrderButton onClick={handleOrder} disabled>예약 마감</S.OrderButton>
             </S.ButtonGroup>
           </S.InfoSection>
         </S.Content>

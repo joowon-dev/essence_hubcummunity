@@ -10,6 +10,7 @@ import { global } from "@src/lib/styles/global";
 import React, { useEffect, useCallback } from "react";
 import { RecoilRoot } from 'recoil';
 import { useAuthStore, initializeAuthState } from "@src/store/auth";
+import { useAdminAuthStore, initializeAdminAuthState } from "@src/store/adminAuth";
 import { useRouter } from 'next/router';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -35,19 +36,25 @@ const isServer = typeof window === 'undefined';
 // 세션 확인 컴포넌트
 function SessionManager({ children }: { children: React.ReactNode }) {
   const { checkSessionExpiry } = useAuthStore();
+  const { checkSessionExpiry: checkAdminSessionExpiry } = useAdminAuthStore();
   const router = useRouter();
   const { startLoading, stopLoading } = useLoading();
+  
+  // 관리자 페이지 접근 확인
+  const isAdminPage = router.pathname.startsWith('/admin');
   
   // 상태 확인 함수를 메모이제이션
   const memoizedCheckSession = useCallback(() => {
     if (typeof window !== 'undefined') {
-      // 세션 만료 확인 및 필요시 상태 복원
+      // 일반 세션 확인
       const isAuthenticated = checkSessionExpiry();
       
-      // 세션 관련 디버그 정보 (필요시 주석 해제)
-      // console.log('SessionManager: 세션 체크 결과', { isAuthenticated });
+      // 관리자 페이지 접근 시 관리자 세션도 확인
+      if (isAdminPage) {
+        checkAdminSessionExpiry();
+      }
     }
-  }, [checkSessionExpiry]);
+  }, [checkSessionExpiry, checkAdminSessionExpiry, isAdminPage]);
 
   // 초기 로드 시 상태 복원
   useEffect(() => {
@@ -55,6 +62,11 @@ function SessionManager({ children }: { children: React.ReactNode }) {
     if (typeof window !== 'undefined') {
       // 즉시 초기화 함수 호출
       initializeAuthState();
+      
+      // 관리자 페이지 접근 시 관리자 초기화도 수행
+      if (isAdminPage) {
+        initializeAdminAuthState();
+      }
       
       // 즉시 세션 체크 수행 (지연 없이)
       memoizedCheckSession();
@@ -69,6 +81,9 @@ function SessionManager({ children }: { children: React.ReactNode }) {
       // 페이지가 로드될 때마다 상태를 확인하기 위한 이벤트 리스너
       const handleLoad = () => {
         initializeAuthState(); // 페이지 로드 시 상태 직접 초기화
+        if (isAdminPage) {
+          initializeAdminAuthState();
+        }
         memoizedCheckSession();
       };
       
@@ -79,7 +94,7 @@ function SessionManager({ children }: { children: React.ReactNode }) {
         window.removeEventListener('load', handleLoad);
       };
     }
-  }, [memoizedCheckSession]);
+  }, [memoizedCheckSession, isAdminPage]);
 
   // 라우팅 변경 감지 및 로딩 처리
   useEffect(() => {
@@ -89,7 +104,7 @@ function SessionManager({ children }: { children: React.ReactNode }) {
     };
     
     // 페이지 변경 완료 시 로딩 숨김
-    const handleRouteChangeComplete = () => {
+    const handleRouteChangeComplete = (url: string) => {
       memoizedCheckSession();
       stopLoading();
     };
