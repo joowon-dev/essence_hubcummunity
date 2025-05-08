@@ -230,6 +230,8 @@ export default function TshirtOrderManagementPage() {
         return '#10b981'; // 초록색 (입금완료)
       case '주문확정':
         return '#3b82f6'; // 파란색 (주문확정)
+      case '수령완료':
+        return '#8b5cf6'; // 보라색 (수령완료)
       case '취소됨':
         return '#6b7280'; // 회색 (취소됨)
       default:
@@ -502,6 +504,7 @@ export default function TshirtOrderManagementPage() {
                   <option value="입금확인중">입금확인중</option>
                   <option value="입금완료">입금완료</option>
                   <option value="주문확정">주문확정</option>
+                  <option value="수령완료">수령완료</option>
                   <option value="취소됨">취소됨</option>
                 </FilterSelect>
               </>
@@ -623,6 +626,7 @@ export default function TshirtOrderManagementPage() {
                               <option value="입금확인중">입금확인중</option>
                               <option value="입금완료">입금완료</option>
                               <option value="주문확정">주문확정</option>
+                              <option value="수령완료">수령완료</option>
                               <option value="취소됨">취소됨</option>
                             </StatusSelect>
                           </ActionContainer>
@@ -745,6 +749,8 @@ export default function TshirtOrderManagementPage() {
                                 <option value="XL">XL</option>
                                 <option value="2XL">2XL</option>
                                 <option value="3XL">3XL</option>
+                                <option value="4XL">4XL</option>
+                                <option value="5XL">5XL</option>
                               </SizeSelect>
                             </ItemTableCell>
                             <ItemTableCell>{item.color}</ItemTableCell>

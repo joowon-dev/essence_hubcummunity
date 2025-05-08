@@ -926,33 +926,37 @@ export default function MyInfoPage() {
             <S.ModalSheet>
               <S.ModalTitle>교환권</S.ModalTitle>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0' }}>
-                <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${selectedQRData}`} 
-                  alt="QR 코드" 
-                  style={{ width: '200px', height: '200px' }} 
-                />
-                
-                {/* 수동 입력용 코드 표시 */}
-                <div style={{ 
-                  marginTop: '15px', 
-                  padding: '10px', 
-                  backgroundColor: '#f0f9ff', 
-                  borderRadius: '8px',
-                  border: '1px solid #bae6fd',
-                  textAlign: 'center',
-                  width: '100%',
-                  maxWidth: '300px'
-                }}>
-                  <div style={{ 
-                    fontSize: '20px', 
-                    fontWeight: 'bold', 
-                    color: '#1e40af',
-                    padding: '5px',
-                    letterSpacing: '0.5px'
-                  }}>
-                    {selectedQRData}
-                  </div>
-                </div>
+                {selectedOrder && selectedOrder.status === '주문확정' && (
+                  <>
+                    <img 
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${selectedQRData}`} 
+                      alt="QR 코드" 
+                      style={{ width: '200px', height: '200px' }} 
+                    />
+                    
+                    {/* 수동 입력용 코드 표시 */}
+                    <div style={{ 
+                      marginTop: '15px', 
+                      padding: '10px', 
+                      backgroundColor: '#f0f9ff', 
+                      borderRadius: '8px',
+                      border: '1px solid #bae6fd',
+                      textAlign: 'center',
+                      width: '100%',
+                      maxWidth: '300px'
+                    }}>
+                      <div style={{ 
+                        fontSize: '20px', 
+                        fontWeight: 'bold', 
+                        color: '#1e40af',
+                        padding: '5px',
+                        letterSpacing: '0.5px'
+                      }}>
+                        {selectedQRData}
+                      </div>
+                    </div>
+                  </>
+                )}
                 
                 {/* 주문 정보 표시 */}
                 {tshirtOrders.map(order => {
@@ -1117,9 +1121,15 @@ export default function MyInfoPage() {
                     {tshirtOrders.map((order) => (
                       <S.OrderCard 
                         key={order.order_id} 
-                        onClick={order.status !== '취소됨' ? () => handleViewOrderDetails(order) : undefined}
+                        onClick={order.status !== '취소됨' ? () => {
+                          if (order.status === '주문확정' || order.status === '수령완료') {
+                            handleOpenQRCode(order.order_id);
+                          } else {
+                            handleViewOrderDetails(order);
+                          }
+                        } : undefined}
                         style={{
-                          ...(order.status === '주문확정' ? {
+                          ...(order.status === '주문확정' || order.status === '수령완료' ? {
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
@@ -1127,12 +1137,12 @@ export default function MyInfoPage() {
                           } : {})
                         }}
                       >
-                        <S.OrderHeader style={order.status === '주문확정' ? { width: '100%' } : {}}>
+                        <S.OrderHeader style={order.status === '주문확정' || order.status === '수령완료' ? { width: '100%' } : {}}>
                           <S.OrderStatus 
                             status={order.status}
                             style={{ 
                               backgroundColor: getStatusColor(order.status),
-                              color: order.status === '주문확정' ? '#ffffff' : 'inherit'
+                              color: (order.status === '주문확정' || order.status === '수령완료') ? '#ffffff' : 'inherit'
                             }}
                           >
                             {order.status}
@@ -1140,7 +1150,7 @@ export default function MyInfoPage() {
                           <S.OrderNumber>주문 #{order.order_id}</S.OrderNumber>
                         </S.OrderHeader>
                         
-                        <S.OrderSummary style={order.status === '주문확정' ? { alignItems: 'center' } : {}}>
+                        <S.OrderSummary style={order.status === '주문확정' || order.status === '수령완료' ? { alignItems: 'center' } : {}}>
                           {(order.status === '주문확정') && (
                             <div 
                               onClick={(e) => {
@@ -1190,13 +1200,6 @@ export default function MyInfoPage() {
                           {order.status !== '취소됨' && !isDeadlinePassed() && (
                             order.status === '입금완료' ? (
                               <></>
-                              // <S.ViewDetailText onClick={(e) => {
-                              //   e.stopPropagation(); // 부모 onClick 이벤트 방지
-                              //   handleSizeChange(order);
-                              // }}>
-                              //   변경하기
-                              //   <S.ViewDetailIcon>›</S.ViewDetailIcon>
-                              // </S.ViewDetailText>
                             ) : (
                               <S.ViewDetailText>
                                 상세정보 보기

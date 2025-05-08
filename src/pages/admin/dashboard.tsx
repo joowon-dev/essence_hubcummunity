@@ -68,6 +68,11 @@ export default function AdminDashboardPage() {
     ? Math.round(((stats['입금완료'] + (stats['주문확정'] || 0)) / validOrders) * 100) 
     : 0;
   
+  // 티셔츠 수령율 계산 (수령완료 / 주문확정)
+  const pickupRate = stats['주문확정'] > 0 
+    ? Math.round((stats['수령완료'] / stats['주문확정']) * 100) 
+    : 0;
+  
   // 합계 계산 함수 (취소됨 상태 제외)
   const calculateTotalWithoutCancelled = (status: string) => {
     if (!orderStats || !orderStats.stats || !orderStats.stats[status]) return 0;
@@ -85,7 +90,7 @@ export default function AdminDashboardPage() {
   };
   
   // 색상 및 사이즈 정렬 순서 정의
-  const sizeOrder = ['S', 'M', 'L', 'XL', '2XL', '3XL'];
+  const sizeOrder = ['S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
   const colorOrder = ['BLACK', 'WHITE'];
 
   // 옵션 정렬 함수
@@ -240,6 +245,17 @@ export default function AdminDashboardPage() {
               </CompletionRateDescription>
             </CompletionRateCard>
             
+            <CompletionRateCard>
+              <CompletionRateTitle>티셔츠 수령율</CompletionRateTitle>
+              <CompletionRateValue>{pickupRate}%</CompletionRateValue>
+              <ProgressBarContainer>
+                <ProgressBar width={`${pickupRate}%`} />
+              </ProgressBarContainer>
+              <CompletionRateDescription>
+                수령완료 / 주문확정
+              </CompletionRateDescription>
+            </CompletionRateCard>
+            
             {/* 티셔츠 주문 통계 테이블 */}
             {!statsLoading && orderStats && (
               <StatsCard>
@@ -391,6 +407,62 @@ export default function AdminDashboardPage() {
                             .filter(status => status !== '취소됨')
                             .reduce((sum, status) => 
                               sum + calculateTotalWithoutCancelled(status), 0)}
+                        </StatisticsTableCell>
+                      </StatisticsTableRow>
+                      {/* 수령완료 행 */}
+                      <StatisticsTableRow>
+                        <StatisticsTableCell>
+                          <StatusBadge status="수령완료">수령완료</StatusBadge>
+                        </StatisticsTableCell>
+                        {colorOrder.map(color => (
+                          sizeOrder.map(size => {
+                            const key = `${size}|${color}`;
+                            const value = orderStats.stats['수령완료']?.[key] || 0;
+                            return (
+                              <StatisticsTableCell 
+                                key={key}
+                                highlighted={true}
+                                specialColor="#8b5cf6"
+                              >
+                                {value}
+                              </StatisticsTableCell>
+                            );
+                          })
+                        ))}
+                        <StatisticsTableCell highlighted={true} specialColor="#8b5cf6">
+                          {calculateTotalWithoutCancelled('수령완료')}
+                        </StatisticsTableCell>
+                      </StatisticsTableRow>
+                      {/* 남은 수량 행 */}
+                      <StatisticsTableRow>
+                        <StatisticsTableCell>
+                          <StatusBadge status="남은수량">남은 수량</StatusBadge>
+                        </StatisticsTableCell>
+                        {colorOrder.map(color => (
+                          sizeOrder.map(size => {
+                            const key = `${size}|${color}`;
+                            const total = selectedStatusFilters
+                              .filter(status => status !== '취소됨')
+                              .reduce((sum, status) => 
+                                sum + (orderStats.stats[status]?.[key] || 0), 0);
+                            const pickedUp = orderStats.stats['수령완료']?.[key] || 0;
+                            const remaining = total - pickedUp;
+                            return (
+                              <StatisticsTableCell 
+                                key={key}
+                                highlighted={true}
+                                specialColor="#f97316"
+                              >
+                                {remaining}
+                              </StatisticsTableCell>
+                            );
+                          })
+                        ))}
+                        <StatisticsTableCell highlighted={true} specialColor="#f97316">
+                          {selectedStatusFilters
+                            .filter(status => status !== '취소됨')
+                            .reduce((sum, status) => 
+                              sum + calculateTotalWithoutCancelled(status), 0) - calculateTotalWithoutCancelled('수령완료')}
                         </StatisticsTableCell>
                       </StatisticsTableRow>
                     </tbody>

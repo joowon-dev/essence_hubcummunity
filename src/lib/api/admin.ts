@@ -338,6 +338,18 @@ export async function getTshirtOrderStats(): Promise<any> {
       return null;
     }
 
+    // 기본 사이즈 옵션 추가 (4XL, 5XL이 없는 경우를 위해)
+    const defaultSizes = ['4XL', '5XL'];
+    const defaultColors = ['BLACK', 'WHITE'];
+    
+    defaultSizes.forEach(size => {
+      defaultColors.forEach(color => {
+        if (!tshirtOptions.some(option => option.size === size && option.color === color)) {
+          tshirtOptions.push({ size, color });
+        }
+      });
+    });
+
     // 옵션별로 그룹화
     const uniqueOptions = Array.from(
       new Set(tshirtOptions.map(option => `${option.size}|${option.color}`))
@@ -346,7 +358,7 @@ export async function getTshirtOrderStats(): Promise<any> {
       return { size, color };
     });
 
-    // 상태별 통계 초기화 (인덱스 시그니처 추가)
+    // 상태별 통계 초기화
     const stats: {
       '미입금': Record<string, number>;
       '입금확인중': Record<string, number>;
