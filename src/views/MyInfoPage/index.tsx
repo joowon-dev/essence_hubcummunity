@@ -1122,8 +1122,10 @@ export default function MyInfoPage() {
                       <S.OrderCard 
                         key={order.order_id} 
                         onClick={order.status !== '취소됨' ? () => {
-                          if (order.status === '주문확정' || order.status === '수령완료') {
+                          if (order.status === '주문확정') {
                             handleOpenQRCode(order.order_id);
+                          } else if (order.status === '수령완료') {
+                            handleViewOrderDetails(order);
                           } else {
                             handleViewOrderDetails(order);
                           }
