@@ -926,39 +926,6 @@ export default function MyInfoPage() {
             <S.ModalSheet>
               <S.ModalTitle>교환권</S.ModalTitle>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0' }}>
-                {selectedOrder && selectedOrder.status === '주문확정' && (
-                  <>
-                    <img 
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${selectedQRData}`} 
-                      alt="QR 코드" 
-                      style={{ width: '200px', height: '200px' }} 
-                    />
-                    
-                    {/* 수동 입력용 코드 표시 */}
-                    <div style={{ 
-                      marginTop: '15px', 
-                      padding: '10px', 
-                      backgroundColor: '#f0f9ff', 
-                      borderRadius: '8px',
-                      border: '1px solid #bae6fd',
-                      textAlign: 'center',
-                      width: '100%',
-                      maxWidth: '300px'
-                    }}>
-                      <div style={{ 
-                        fontSize: '20px', 
-                        fontWeight: 'bold', 
-                        color: '#1e40af',
-                        padding: '5px',
-                        letterSpacing: '0.5px'
-                      }}>
-                        {selectedQRData}
-                      </div>
-                    </div>
-                  </>
-                )}
-                
-                {/* 주문 정보 표시 */}
                 {tshirtOrders.map(order => {
                   const [orderId] = selectedQRData.split('-');
                   if (order.order_id.toString() === orderId) {
@@ -984,6 +951,45 @@ export default function MyInfoPage() {
                         }}>
                           {order.name}
                         </div>
+                        
+                        {/* QR 코드 - 주문확정 상태일 때만 표시 */}
+                        {order.status === '주문확정' && (
+                          <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            width: '100%',
+                            marginBottom: '20px'
+                          }}>
+                            <img 
+                              src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${selectedQRData}`} 
+                              alt="QR 코드" 
+                              style={{ width: '200px', height: '200px' }} 
+                            />
+                            
+                            {/* 수동 입력용 코드 표시 */}
+                            <div style={{ 
+                              marginTop: '15px', 
+                              padding: '10px', 
+                              backgroundColor: '#f0f9ff', 
+                              borderRadius: '8px',
+                              border: '1px solid #bae6fd',
+                              textAlign: 'center',
+                              width: '100%',
+                              maxWidth: '300px'
+                            }}>
+                              <div style={{ 
+                                fontSize: '20px', 
+                                fontWeight: 'bold', 
+                                color: '#1e40af',
+                                padding: '5px',
+                                letterSpacing: '0.5px'
+                              }}>
+                                {selectedQRData}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                         
                         {/* 주문 상품 정보 - 크게 표시 */}
                         <div style={{ 
