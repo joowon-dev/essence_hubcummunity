@@ -68,9 +68,9 @@ export default function AdminDashboardPage() {
     ? Math.round(((stats['입금완료'] + (stats['주문확정'] || 0)) / validOrders) * 100) 
     : 0;
   
-  // 티셔츠 수령율 계산 (수령완료 / 주문확정)
-  const pickupRate = stats['주문확정'] > 0 
-    ? Math.round((stats['수령완료'] / stats['주문확정']) * 100) 
+  // 티셔츠 수령율 계산 (수령완료 / 전체주문)
+  const pickupRate = totalOrders > 0 
+    ? Math.round((stats['수령완료'] / totalOrders) * 100) 
     : 0;
   
   // 합계 계산 함수 (취소됨 상태 제외)
@@ -252,7 +252,7 @@ export default function AdminDashboardPage() {
                 <ProgressBar width={`${pickupRate}%`} />
               </ProgressBarContainer>
               <CompletionRateDescription>
-                수령완료 / 주문확정
+                수령완료 / 전체주문
               </CompletionRateDescription>
             </CompletionRateCard>
             
