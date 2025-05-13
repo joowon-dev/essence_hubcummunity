@@ -8,18 +8,21 @@ import Head from 'next/head';
 import axios from 'axios';
 import type { RcFile, UploadFile, UploadProps } from 'antd/es/upload/interface';
 import moment from 'moment';
+import { getLostItems, createLostItem, updateLostItem, deleteLostItem, uploadImage } from '@src/lib/api/admin';
+import { supabase } from '@src/lib/supabase';
 
 // 분실물 인터페이스 정의
 interface LostItem {
   id: number;
-  title: string;
+  name: string;
   description: string;
-  image_url: string;
   location: string;
   found_date: string;
   status: string;
-  contact_info: string;
+  image_url?: string;
+  contact_info?: string;
   created_at: string;
+  updated_at: string;
 }
 
 const { Title, Text } = Typography;
@@ -27,8 +30,8 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 const AdminLostItemsPage: React.FC = () => {
-  const [lostItems, setLostItems] = useState<LostItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [items, setItems] = useState<LostItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [form] = Form.useForm();
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -38,15 +41,14 @@ const AdminLostItemsPage: React.FC = () => {
   const [uploading, setUploading] = useState(false);
 
   // 분실물 데이터 불러오기
-  const fetchLostItems = async () => {
+  const loadItems = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/admin/lost-items');
-      setLostItems(response.data);
-      message.success('분실물 정보를 불러왔습니다.');
+      const data = await getLostItems();
+      setItems(data);
     } catch (error) {
-      console.error('분실물 정보 불러오기 실패:', error);
-      message.error('분실물 정보를 불러오는데 실패했습니다.');
+      console.error('분실물 목록 로드 중 오류:', error);
+      message.error('분실물 목록을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -54,7 +56,7 @@ const AdminLostItemsPage: React.FC = () => {
 
   // 컴포넌트 마운트 시 데이터 불러오기
   useEffect(() => {
-    fetchLostItems();
+    loadItems();
   }, []);
 
   // 모달 표시 함수
@@ -63,7 +65,7 @@ const AdminLostItemsPage: React.FC = () => {
     if (record) {
       setEditingId(record.id);
       form.setFieldsValue({
-        title: record.title,
+        name: record.name,
         description: record.description,
         location: record.location,
         found_date: moment(record.found_date),
@@ -97,59 +99,132 @@ const AdminLostItemsPage: React.FC = () => {
     setFileList([]);
   };
 
-  // 폼 제출 처리
-  const handleSubmit = async () => {
+  // 업로드 전 파일 확인
+  const beforeUpload = (file: RcFile) => {
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      message.error('이미지 파일만 업로드할 수 있습니다!');
+      return Upload.LIST_IGNORE;
+    }
+    
+    const isLt2M = file.size / 1024 / 1024 < 2;
+    if (!isLt2M) {
+      message.error('이미지 크기는 2MB 이하여야 합니다!');
+      return Upload.LIST_IGNORE;
+    }
+    
+    return false; // 수동 업로드를 위해 자동 업로드 방지
+  };
+
+  // 업로드 파일 변경 핸들러
+  const handleUploadChange = async ({ fileList: newFileList }: { fileList: UploadFile[] }) => {
     try {
-      const values = await form.validateFields();
-      setUploading(true);
-      
-      // 이미지 업로드 처리
-      let imageUrl = editingId && lostItems.find(item => item.id === editingId)?.image_url;
-      
-      if (fileList.length > 0 && fileList[0].originFileObj) {
-        const formData = new FormData();
-        formData.append('file', fileList[0].originFileObj);
+      // 새로 추가된 파일이 있는 경우
+      const newFile = newFileList.find(file => file.status === 'uploading');
+      if (newFile?.originFileObj) {
+        setUploading(true);
+        console.log('새 파일 업로드 시작:', newFile.name);
         
         try {
-          const uploadRes = await axios.post('/api/admin/upload', formData);
-          imageUrl = uploadRes.data.url;
-        } catch (error) {
-          console.error('이미지 업로드 오류:', error);
-          message.error('이미지 업로드 중 오류가 발생했습니다.');
-          setUploading(false);
+          const imageUrl = await uploadImage(newFile.originFileObj);
+          console.log('업로드된 이미지 URL:', imageUrl);
+          
+          if (!imageUrl) {
+            throw new Error('이미지 URL을 받지 못했습니다.');
+          }
+
+          // 파일 리스트 업데이트
+          const updatedFileList: UploadFile[] = [{
+            uid: '-1',
+            name: newFile.name,
+            status: 'done' as const,
+            url: imageUrl,
+          }];
+          
+          setFileList(updatedFileList);
+          message.success('이미지가 업로드되었습니다.');
+        } catch (uploadError: any) {
+          console.error('이미지 업로드 실패:', uploadError);
+          message.error(uploadError.message || '이미지 업로드에 실패했습니다.');
+          setFileList([]);
+        }
+      } else {
+        // 파일이 제거된 경우
+        setFileList(newFileList);
+      }
+    } catch (error: any) {
+      console.error('이미지 업로드 중 오류:', error);
+      message.error(error.message || '이미지 업로드에 실패했습니다.');
+      setFileList([]);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // 폼 제출 처리
+  const handleSubmit = async (values: any) => {
+    setLoading(true);
+    try {
+      console.log('폼 제출 시작');
+      console.log('제출된 값:', values);
+      console.log('현재 파일 리스트:', fileList);
+
+      // 날짜 형식 검증
+      if (!values.found_date || !moment.isMoment(values.found_date)) {
+        throw new Error('유효하지 않은 날짜입니다.');
+      }
+
+      // 이미지 URL 처리
+      let imageUrl = null;
+      if (fileList.length > 0 && fileList[0].originFileObj) {
+        try {
+          imageUrl = await uploadImage(fileList[0].originFileObj);
+          console.log('업로드된 이미지 URL:', imageUrl);
+        } catch (uploadError: any) {
+          console.error('이미지 업로드 실패:', uploadError);
+          message.error(uploadError.message || '이미지 업로드에 실패했습니다.');
           return;
         }
       }
-      
-      const submissionData = {
-        ...values,
-        found_date: values.found_date.format('YYYY-MM-DD'),
-        image_url: imageUrl
+
+      const formData = {
+        name: values.name?.trim(),
+        description: values.description?.trim(),
+        location: values.location?.trim(),
+        found_date: values.found_date.toISOString(),
+        image_url: imageUrl,
+        contact_info: values.contact_info?.trim() || null,
+        status: values.status || '보관중'
       };
-      
-      if (editingId) {
-        // 수정 요청
-        await axios.put(`/api/admin/lost-items/${editingId}`, submissionData);
-        message.success('분실물 정보가 성공적으로 수정되었습니다.');
-      } else {
-        // 추가 요청
-        await axios.post('/api/admin/lost-items', submissionData);
-        message.success('분실물이 성공적으로 추가되었습니다.');
+
+      console.log('전송할 데이터:', formData);
+
+      // 필수 필드 검증
+      if (!formData.name || !formData.description || !formData.location) {
+        throw new Error('필수 정보가 누락되었습니다.');
       }
-      
+
+      let response;
+      if (editingId) {
+        // 수정 모드
+        response = await updateLostItem(editingId, formData);
+        message.success('분실물이 수정되었습니다.');
+      } else {
+        // 새로 추가 모드
+        response = await createLostItem(formData);
+        message.success('분실물이 등록되었습니다.');
+      }
+
+      console.log('API 응답:', response);
       setIsModalVisible(false);
       form.resetFields();
       setFileList([]);
-      fetchLostItems(); // 데이터 다시 불러오기
+      loadItems();
     } catch (error: any) {
-      console.error('폼 제출 오류:', error);
-      if (error.response?.data?.message) {
-        message.error(error.response.data.message);
-      } else {
-        message.error('폼 작성 중 오류가 발생했습니다.');
-      }
+      console.error('분실물 등록/수정 중 오류:', error);
+      message.error(error.message || '분실물 등록/수정에 실패했습니다.');
     } finally {
-      setUploading(false);
+      setLoading(false);
     }
   };
 
@@ -160,18 +235,18 @@ const AdminLostItemsPage: React.FC = () => {
     }
     
     try {
-      await axios.delete(`/api/admin/lost-items/${id}`);
+      await deleteLostItem(id);
       message.success('분실물이 삭제되었습니다');
-      fetchLostItems(); // 데이터 다시 불러오기
+      loadItems();
     } catch (error) {
       console.error('분실물 삭제 중 오류:', error);
-      message.error('분실물 삭제 중 오류가 발생했습니다');
+      message.error('분실물 삭제에 실패했습니다');
     }
   };
 
   // 검색 및 필터링
-  const getFilteredLostItems = () => {
-    let filtered = lostItems;
+  const getFilteredItems = () => {
+    let filtered = items;
     
     if (statusFilter !== 'all') {
       filtered = filtered.filter(item => item.status === statusFilter);
@@ -181,33 +256,13 @@ const AdminLostItemsPage: React.FC = () => {
       const searchLower = searchText.toLowerCase();
       filtered = filtered.filter(
         item => 
-          item.title.toLowerCase().includes(searchLower) || 
+          item.name.toLowerCase().includes(searchLower) || 
           item.description.toLowerCase().includes(searchLower) ||
           item.location.toLowerCase().includes(searchLower)
       );
     }
     
     return filtered;
-  };
-
-  // 업로드 전 파일 확인
-  const beforeUpload = (file: RcFile) => {
-    const isImage = file.type.startsWith('image/');
-    if (!isImage) {
-      message.error('이미지 파일만 업로드할 수 있습니다!');
-    }
-    
-    const isLt2M = file.size / 1024 / 1024 < 2;
-    if (!isLt2M) {
-      message.error('이미지 크기는 2MB 이하여야 합니다!');
-    }
-    
-    return false; // 수동 업로드를 위해 자동 업로드 방지
-  };
-
-  // 업로드 파일 변경 핸들러
-  const handleChange: UploadProps['onChange'] = ({ fileList: newFileList }) => {
-    setFileList(newFileList);
   };
 
   // 상태 배지 표시
@@ -236,9 +291,9 @@ const AdminLostItemsPage: React.FC = () => {
   const columns: ColumnsType<LostItem> = [
     {
       title: '분실물명',
-      dataIndex: 'title',
-      key: 'title',
-      sorter: (a, b) => a.title.localeCompare(b.title),
+      dataIndex: 'name',
+      key: 'name',
+      sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
       title: '발견 장소',
@@ -332,7 +387,7 @@ const AdminLostItemsPage: React.FC = () => {
 
         <Table
           columns={columns}
-          dataSource={getFilteredLostItems()}
+          dataSource={getFilteredItems()}
           rowKey="id"
           loading={loading}
           pagination={{ pageSize: 10 }}
@@ -352,19 +407,21 @@ const AdminLostItemsPage: React.FC = () => {
         <Modal
           title={editingId ? '분실물 정보 수정' : '새 분실물 추가'}
           open={isModalVisible}
-          onOk={handleSubmit}
           onCancel={handleCancel}
-          okText={editingId ? '수정' : '추가'}
-          cancelText="취소"
-          confirmLoading={uploading}
+          footer={null}
           width={600}
         >
           <Form
             form={form}
             layout="vertical"
+            onFinish={handleSubmit}
+            initialValues={{
+              found_date: moment(),
+              status: '보관중'
+            }}
           >
             <Form.Item
-              name="title"
+              name="name"
               label="분실물명"
               rules={[{ required: true, message: '분실물명을 입력해주세요' }]}
             >
@@ -393,14 +450,16 @@ const AdminLostItemsPage: React.FC = () => {
               rules={[{ required: true, message: '상태를 선택해주세요' }]}
             >
               <Select>
-                <Option value="found">보관중</Option>
-                <Option value="returned">찾아감</Option>
+                <Option value="보관중">보관중</Option>
+                <Option value="반환완료">반환완료</Option>
+                <Option value="폐기">폐기</Option>
               </Select>
             </Form.Item>
             
             <Form.Item
               name="description"
               label="상세 설명"
+              rules={[{ required: true, message: '상세 설명을 입력해주세요' }]}
             >
               <TextArea 
                 placeholder="분실물에 대한 상세 설명을 입력하세요" 
@@ -424,14 +483,27 @@ const AdminLostItemsPage: React.FC = () => {
                 listType="picture"
                 fileList={fileList}
                 beforeUpload={beforeUpload}
-                onChange={handleChange}
+                onChange={handleUploadChange}
                 maxCount={1}
+                disabled={uploading}
+                onRemove={() => {
+                  setFileList([]);
+                  return true;
+                }}
               >
-                <Button icon={<UploadOutlined />}>이미지 업로드</Button>
+                <Button icon={<UploadOutlined />} loading={uploading}>
+                  {uploading ? '업로드 중...' : '이미지 업로드'}
+                </Button>
               </Upload>
               <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
                 이미지는 2MB 이하의 JPG, PNG 파일만 업로드 가능합니다.
               </Text>
+            </Form.Item>
+
+            <Form.Item>
+              <Button type="primary" htmlType="submit" loading={loading}>
+                {editingId ? '수정' : '등록'}
+              </Button>
             </Form.Item>
           </Form>
         </Modal>

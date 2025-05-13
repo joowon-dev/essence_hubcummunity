@@ -8,25 +8,46 @@ import Head from 'next/head';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
+// Supabase Storage URL
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+// 이미지 URL 생성 함수
+const getImageUrl = (imagePath: string | null | undefined) => {
+  if (!imagePath) return 'https://placehold.co/400x300/e2e8f0/64748b?text=No+Image';
+  
+  // 이미 전체 URL인 경우
+  if (imagePath.startsWith('http')) return imagePath;
+  
+  // Supabase Storage URL인 경우
+  if (imagePath.startsWith('/storage/v1/object/public/')) {
+    return `${SUPABASE_URL}${imagePath}`;
+  }
+  
+  // 파일 경로만 있는 경우
+  return `${SUPABASE_URL}/storage/v1/object/public/images/${imagePath}`;
+};
+
 // 상태에 따른 색상을 반환하는 헬퍼 함수
 const getStatusColorValue = (status: string) => {
   switch (status) {
-    case 'found': return '#10B981';
-    case 'returned': return '#6B7280';
+    case '보관중': return '#10B981';
+    case '반환완료': return '#6B7280';
+    case '폐기': return '#EF4444';
     default: return '#3B82F6';
   }
 };
 
 interface LostItem {
   id: number;
-  title: string;
+  name: string;
   description: string;
-  image_url: string;
   location: string;
   found_date: string;
   status: string;
-  contact_info: string;
+  image_url?: string;
+  contact_info?: string;
   created_at: string;
+  updated_at: string;
 }
 
 export default function LostItemsPage() {
@@ -36,7 +57,7 @@ export default function LostItemsPage() {
   const [lostItems, setLostItems] = useState<LostItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<LostItem | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'found' | 'returned'>('all');
+  const [filter, setFilter] = useState<'all' | '보관중' | '반환완료' | '폐기'>('all');
 
   useEffect(() => {
     // 인증 상태 확인
@@ -94,8 +115,9 @@ export default function LostItemsPage() {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'found': return '보관중';
-      case 'returned': return '찾아감';
+      case '보관중': return '보관중';
+      case '반환완료': return '반환완료';
+      case '폐기': return '폐기';
       default: return status;
     }
   };
@@ -127,16 +149,22 @@ export default function LostItemsPage() {
             전체
           </FilterButton>
           <FilterButton 
-            active={filter === 'found'} 
-            onClick={() => setFilter('found')}
+            active={filter === '보관중'} 
+            onClick={() => setFilter('보관중')}
           >
             보관중
           </FilterButton>
           <FilterButton 
-            active={filter === 'returned'} 
-            onClick={() => setFilter('returned')}
+            active={filter === '반환완료'} 
+            onClick={() => setFilter('반환완료')}
           >
-            찾아감
+            반환완료
+          </FilterButton>
+          <FilterButton 
+            active={filter === '폐기'} 
+            onClick={() => setFilter('폐기')}
+          >
+            폐기
           </FilterButton>
         </FilterContainer>
         
@@ -147,13 +175,20 @@ export default function LostItemsPage() {
             {filteredItems.map(item => (
               <ItemCard key={item.id} onClick={() => handleItemClick(item)}>
                 <ItemImageContainer>
-                  <ItemImage src={item.image_url || '/images/placeholder.png'} alt={item.title} />
+                  <ItemImage 
+                    src={getImageUrl(item.image_url)}
+                    alt={item.name}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = 'https://placehold.co/400x300/e2e8f0/64748b?text=No+Image';
+                    }}
+                  />
                   <ItemStatus status={item.status}>
                     {getStatusText(item.status)}
                   </ItemStatus>
                 </ItemImageContainer>
                 <ItemContent>
-                  <ItemTitle>{item.title}</ItemTitle>
+                  <ItemTitle>{item.name}</ItemTitle>
                   <ItemLocation>{item.location}</ItemLocation>
                   <ItemDate>{formatDate(item.found_date)}</ItemDate>
                 </ItemContent>
@@ -164,9 +199,11 @@ export default function LostItemsPage() {
           <NoItemsMessage>
             {filter === 'all' 
               ? '등록된 분실물이 없습니다.' 
-              : filter === 'found' 
+              : filter === '보관중' 
                 ? '현재 보관 중인 분실물이 없습니다.' 
-                : '찾아간 분실물이 없습니다.'}
+                : filter === '반환완료'
+                  ? '반환 완료된 분실물이 없습니다.'
+                  : '폐기된 분실물이 없습니다.'}
           </NoItemsMessage>
         )}
         
@@ -183,15 +220,19 @@ export default function LostItemsPage() {
             
             <ModalImageContainer>
               <ModalImage 
-                src={selectedItem.image_url || '/images/placeholder.png'} 
-                alt={selectedItem.title} 
+                src={getImageUrl(selectedItem.image_url)}
+                alt={selectedItem.name}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = 'https://placehold.co/400x300/e2e8f0/64748b?text=No+Image';
+                }}
               />
               <ModalStatus status={selectedItem.status}>
                 {getStatusText(selectedItem.status)}
               </ModalStatus>
             </ModalImageContainer>
             
-            <ModalTitle>{selectedItem.title}</ModalTitle>
+            <ModalTitle>{selectedItem.name}</ModalTitle>
             
             <ModalDetails>
               <ModalDetailRow>
@@ -211,7 +252,7 @@ export default function LostItemsPage() {
                 </ModalDescription>
               )}
               
-              {selectedItem.contact_info && selectedItem.status === 'found' && (
+              {selectedItem.contact_info && selectedItem.status === '보관중' && (
                 <ModalContactInfo>
                   <ModalContactLabel>문의 정보</ModalContactLabel>
                   <ModalContactValue>{selectedItem.contact_info}</ModalContactValue>
@@ -220,13 +261,17 @@ export default function LostItemsPage() {
             </ModalDetails>
             
             <ModalFooter>
-              {selectedItem.status === 'found' ? (
+              {selectedItem.status === '보관중' ? (
                 <ModalFooterText>
                   본인의 물건이라면 위 연락처로 문의해주세요.
                 </ModalFooterText>
-              ) : (
+              ) : selectedItem.status === '반환완료' ? (
                 <ModalFooterText>
                   이미 주인을 찾은 물건입니다.
+                </ModalFooterText>
+              ) : (
+                <ModalFooterText>
+                  폐기된 물건입니다.
                 </ModalFooterText>
               )}
             </ModalFooter>

@@ -14,6 +14,7 @@ interface UserInfo {
   // 선택적 필드로 변경 (일반 사용자만 해당)
   departure_time?: string;
   return_time?: string;
+  room_number?: string; // 호실 정보 추가
 }
 
 interface TshirtOrder {
@@ -77,6 +78,7 @@ export default function MyInfoPage() {
   const [showConfirmOrder, setShowConfirmOrder] = useState(false);
   const [orderToConfirm, setOrderToConfirm] = useState<TshirtOrder | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false); // 주문 확정 로딩 상태 추가
+  const [roomNumber, setRoomNumber] = useState<string | null>(null);
   
   // YYYYMMDD 형식의 문자열을 Date 객체로 변환하는 함수
   const parseDateFromString = (dateString: string) => {
@@ -500,7 +502,6 @@ export default function MyInfoPage() {
 
     async function fetchData() {
       try {
-        // 전화번호가 없으면 정보를 가져올 수 없음
         if (!phoneNumber) {
           console.error('전화번호 정보가 없습니다.');
           setLoading(false);
@@ -517,6 +518,17 @@ export default function MyInfoPage() {
         if (!userError && userData) {
           setUserInfo(userData);
           setUserType('normal');
+
+          // 호실 정보 가져오기
+          const { data: roomData, error: roomError } = await supabase
+            .from('room_assignments')
+            .select('room_number')
+            .eq('phone_number', phoneNumber)
+            .single();
+
+          if (!roomError && roomData) {
+            setRoomNumber(roomData.room_number);
+          }
         } else {
           // 2. 티셔츠 전용 사용자 정보 확인
           const { data: tshirtUserData, error: tshirtUserError } = await supabase
@@ -1098,11 +1110,28 @@ export default function MyInfoPage() {
                     </svg>
                   </S.ChangeIcon>
                   <S.ChangeText>
-                  차량정보 변경하기({carChangeInfo.day}까지)
+                    차량정보 변경하기({carChangeInfo.day}까지)
                   </S.ChangeText>
                 </S.ChangeNotice>
               ) : (
                 <S.Note>차량 변경 기간 마감</S.Note>
+              )}
+            </S.Section>
+          )}
+
+          {/* 숙소 정보 섹션 추가 */}
+          {userType === 'normal' && (
+            <S.Section>
+              <S.SectionTitle>숙소 정보</S.SectionTitle>
+              {roomNumber ? (
+                <S.RoomInfo>
+                  <S.RoomNumber>{roomNumber}호</S.RoomNumber>
+                </S.RoomInfo>
+              ) : (
+                <S.NoRoomMessage>
+                  <S.InfoIcon>i</S.InfoIcon>
+                  숙소 정보가 없습니다.
+                </S.NoRoomMessage>
               )}
             </S.Section>
           )}
@@ -1268,12 +1297,6 @@ export default function MyInfoPage() {
                 <S.MenuIcon>🍽️</S.MenuIcon>
                 <S.MenuText>식단표</S.MenuText>
               </S.MenuItem>
-              
-              <S.MenuItem onClick={handleAccommodationClick}>
-                <S.MenuIcon>🏠</S.MenuIcon>
-                <S.MenuText>숙소 정보</S.MenuText>
-              </S.MenuItem>
-              
               <S.MenuItem onClick={handleLostItemsClick}>
                 <S.MenuIcon>🔍</S.MenuIcon>
                 <S.MenuText>분실물</S.MenuText>

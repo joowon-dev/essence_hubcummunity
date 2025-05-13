@@ -13,13 +13,13 @@ export const menuTapList: MenuTapList = [
   },
   {
     type: MenuTapType.DEFAULT,
-    title: '숙소 정보',
-    href: '/accommodation',
+    title: '분실물',
+    href: '/lost-items',
   },
   {
     type: MenuTapType.DEFAULT,
-    title: '분실물',
-    href: '/lost-items',
+    title: '공지사항',
+    href: '/announcements',
   },
   {
     type: MenuTapType.DEFAULT,

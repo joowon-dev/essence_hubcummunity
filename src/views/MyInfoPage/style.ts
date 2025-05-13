@@ -1086,4 +1086,32 @@ export const LoadingSpinner = styled.div`
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
+`;
+
+export const RoomInfo = styled.div`
+  background-color: #f9fafb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+export const RoomNumber = styled.div`
+  font-size: 24px;
+  font-weight: 600;
+  color: #1f2937;
+`;
+
+export const NoRoomMessage = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 14px;
 `; 

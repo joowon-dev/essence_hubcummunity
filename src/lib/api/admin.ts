@@ -409,4 +409,192 @@ export async function getTshirtOrderStats(): Promise<any> {
     console.error('주문 통계 조회 중 오류:', error);
     return null;
   }
-} 
+}
+
+// 분실물 목록 조회
+export const getLostItems = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('lost_items')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('분실물 목록 조회 오류:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('분실물 목록 조회 중 오류:', error);
+    throw error;
+  }
+};
+
+// 분실물 등록
+export const createLostItem = async (data: {
+  name: string;
+  description: string;
+  location: string;
+  image_url?: string | null;
+  contact_info?: string | null;
+  found_date: string;
+  status: string;
+}) => {
+  try {
+    console.log('전송할 데이터:', data);
+
+    const { data: newItem, error } = await supabase
+      .from('lost_items')
+      .insert([{
+        ...data,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('분실물 등록 오류:', error);
+      throw error;
+    }
+
+    console.log('등록된 아이템:', newItem);
+    return newItem;
+  } catch (error: any) {
+    console.error('분실물 등록 중 오류:', error);
+    throw error;
+  }
+};
+
+// 분실물 상태 업데이트
+export const updateLostItemStatus = async (id: number, status: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('lost_items')
+      .update({ 
+        status,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('상태 업데이트 오류:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('분실물 상태 업데이트 중 오류:', error);
+    throw error;
+  }
+};
+
+// 분실물 삭제
+export const deleteLostItem = async (id: number) => {
+  try {
+    const { error } = await supabase
+      .from('lost_items')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('삭제 오류:', error);
+      throw error;
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('분실물 삭제 중 오류:', error);
+    throw error;
+  }
+};
+
+// 분실물 정보 수정
+export const updateLostItem = async (id: number, data: {
+  name: string;
+  description: string;
+  location: string;
+  image_url?: string | null;
+  contact_info?: string | null;
+  found_date: string;
+  status: string;
+}) => {
+  try {
+    console.log('수정할 데이터:', data);
+
+    const { data: updatedItem, error } = await supabase
+      .from('lost_items')
+      .update({
+        ...data,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('분실물 수정 오류:', error);
+      throw error;
+    }
+
+    console.log('수정된 아이템:', updatedItem);
+    return updatedItem;
+  } catch (error: any) {
+    console.error('분실물 수정 중 오류:', error);
+    throw error;
+  }
+};
+
+// 이미지 업로드
+export const uploadImage = async (file: File) => {
+  try {
+    console.log('이미지 업로드 시작:', file.name);
+    console.log('파일 타입:', file.type);
+    console.log('파일 크기:', file.size);
+    
+    // 파일 이름 생성 (중복 방지)
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const filePath = `lost-items/${fileName}`;
+
+    console.log('업로드 경로:', filePath);
+
+    // Supabase Storage에 업로드
+    const { data, error } = await supabase.storage
+      .from('images')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: file.type
+      });
+
+    if (error) {
+      console.error('이미지 업로드 오류:', error);
+      throw new Error(`이미지 업로드 실패: ${error.message}`);
+    }
+
+    if (!data) {
+      throw new Error('업로드된 파일 데이터가 없습니다.');
+    }
+
+    console.log('업로드 성공:', data);
+
+    // 업로드된 파일의 URL 가져오기
+    const { data: { publicUrl } } = supabase.storage
+      .from('images')
+      .getPublicUrl(filePath);
+
+    if (!publicUrl) {
+      throw new Error('이미지 URL을 생성할 수 없습니다.');
+    }
+
+    console.log('생성된 URL:', publicUrl);
+    return publicUrl;
+  } catch (error: any) {
+    console.error('이미지 업로드 중 오류:', error);
+    throw new Error(error.message || '이미지 업로드에 실패했습니다.');
+  }
+}; 
