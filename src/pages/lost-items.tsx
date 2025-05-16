@@ -263,7 +263,7 @@ export default function LostItemsPage() {
             <ModalFooter>
               {selectedItem.status === '보관중' ? (
                 <ModalFooterText>
-                  본인의 물건이라면 위 연락처로 문의해주세요.
+                  본인의 물건이라면 본부로 문의해주세요.
                 </ModalFooterText>
               ) : selectedItem.status === '반환완료' ? (
                 <ModalFooterText>
