@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { useRouter } from 'next/router';
 import { supabase } from '@src/lib/supabase';
-import { useAuthStore, initializeAuthState } from '@src/store/auth';
 import PageLayout from '@src/components/common/PageLayout';
 import Head from 'next/head';
 import { format } from 'date-fns';
@@ -52,7 +51,6 @@ interface LostItem {
 
 export default function LostItemsPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [lostItems, setLostItems] = useState<LostItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<LostItem | null>(null);
@@ -60,16 +58,6 @@ export default function LostItemsPage() {
   const [filter, setFilter] = useState<'all' | '보관중' | '반환완료' | '폐기'>('all');
 
   useEffect(() => {
-    // 인증 상태 확인
-    if (typeof window !== 'undefined') {
-      const isAuth = initializeAuthState();
-      if (!isAuth && !useAuthStore.getState().isAuthenticated) {
-        localStorage.setItem('login_redirect', '/lost-items');
-        router.replace('/login');
-        return;
-      }
-    }
-
     const fetchLostItems = async () => {
       try {
         setLoading(true);
@@ -92,7 +80,7 @@ export default function LostItemsPage() {
     };
 
     fetchLostItems();
-  }, [router]);
+  }, []);
 
   const handleItemClick = (item: LostItem) => {
     setSelectedItem(item);
