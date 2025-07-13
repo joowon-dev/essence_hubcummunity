@@ -135,7 +135,7 @@ export const WallpaperItem = styled.div<{ $isSelected: boolean }>`
   transition: all 0.3s ease;
   border-radius: 8px;
   padding: 10px;
-  min-width: 170px;
+  min-width: 220px;
   scroll-snap-align: center;
   margin-right: 15px;
   background-color: ${({ $isSelected }) => $isSelected ? 'rgba(237, 39, 37, 0.2)' : 'rgba(255, 255, 255, 0.05)'};
@@ -149,15 +149,18 @@ export const WallpaperItem = styled.div<{ $isSelected: boolean }>`
   &:last-child {
     margin-right: 0;
   }
+  @media (min-width: 58.75rem) {
+    min-width: 260px;
+  }
 `;
 
 export const WallpaperImage = styled.img`
   width: 100%;
   aspect-ratio: 9/16;
   object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 `;
 
 export const WallpaperTitle = styled.span`

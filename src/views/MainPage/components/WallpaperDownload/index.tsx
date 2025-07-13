@@ -48,6 +48,7 @@ export default function WallpaperDownload() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [remainingDownloads, setRemainingDownloads] = useState<number | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [isBulkDownloading, setIsBulkDownloading] = useState(false);
 
   // 남은 다운로드 횟수 조회
   useEffect(() => {
@@ -89,7 +90,7 @@ export default function WallpaperDownload() {
       image.onload = () => {
         const link = document.createElement('a');
         link.href = wallpaper.mobile;
-        link.download = `Essence_${wallpaper.title}.jpeg`;
+        link.download = `DtoV_${wallpaper.title}`;
         link.click();
         
         // 다운로드 작업이 시작된 후 약간의 지연시간을 두고 로딩 상태 해제
@@ -112,6 +113,52 @@ export default function WallpaperDownload() {
         setDownloadError('현재 다운로드를 처리할 수 없습니다. 나중에 다시 시도해주세요.');
       } else {
         setDownloadError('다운로드 중 오류가 발생했습니다. 다시 시도해주세요.');
+      }
+    }
+  };
+
+  // 일괄 다운로드 함수
+  const handleBulkDownload = async () => {
+    if (isDownloading || isBulkDownloading || remainingDownloads === 0) return;
+    setIsBulkDownloading(true);
+    setDownloadError(null);
+    try {
+      // 다운로드 제한이 있다면 남은 횟수만큼만 다운로드
+      let downloadCount = wallpapers.length;
+      if (typeof remainingDownloads === 'number') {
+        downloadCount = Math.min(downloadCount, remainingDownloads);
+      }
+      // 다운로드 카운트 감소 API 호출 (일괄로)
+      const response = await axios.post('/api/downloads/count', { count: downloadCount });
+      setRemainingDownloads(response.data.remainingCount);
+      // 실제 이미지 다운로드
+      for (let i = 0; i < downloadCount; i++) {
+        const wallpaper = wallpapers[i];
+        await new Promise<void>((resolve, reject) => {
+          const image = new Image();
+          image.crossOrigin = "anonymous";
+          image.src = wallpaper.mobile;
+          image.onload = () => {
+            const link = document.createElement('a');
+            link.href = wallpaper.mobile;
+            link.download = `DtoV_${wallpaper.title}`;
+            link.click();
+            setTimeout(resolve, 500); // 약간의 지연
+          };
+          image.onerror = () => {
+            setDownloadError('이미지 다운로드 중 오류가 발생했습니다. 다시 시도해주세요.');
+            resolve(); // 다음 이미지로 진행
+          };
+        });
+      }
+      setIsBulkDownloading(false);
+    } catch (error) {
+      setIsBulkDownloading(false);
+      if (axios.isAxiosError(error) && error.response?.status === 403) {
+        setRemainingDownloads(0);
+        setDownloadError('현재 다운로드를 처리할 수 없습니다. 나중에 다시 시도해주세요.');
+      } else {
+        setDownloadError('일괄 다운로드 중 오류가 발생했습니다. 다시 시도해주세요.');
       }
     }
   };
@@ -211,10 +258,19 @@ export default function WallpaperDownload() {
           <S.DownloadSection>
             <S.DownloadButton 
               onClick={handleDownload}
-              disabled={selectedWallpaper === null || isDownloading || remainingDownloads === 0}
+              disabled={selectedWallpaper === null || isDownloading || remainingDownloads === 0 || isBulkDownloading}
             >
-              <S.ButtonText $isDisabled={selectedWallpaper === null || isDownloading || remainingDownloads === 0}>
+              <S.ButtonText $isDisabled={selectedWallpaper === null || isDownloading || remainingDownloads === 0 || isBulkDownloading}>
                 {isDownloading ? '다운로드 중...' : '배경화면 다운로드'}
+              </S.ButtonText>
+            </S.DownloadButton>
+            {/* 일괄 다운로드 버튼 추가 */}
+            <S.DownloadButton 
+              onClick={handleBulkDownload}
+              disabled={isDownloading || isBulkDownloading || remainingDownloads === 0}
+            >
+              <S.ButtonText $isDisabled={isDownloading || isBulkDownloading || remainingDownloads === 0}>
+                {isBulkDownloading ? '일괄 다운로드 중...' : '일괄 다운로드'}
               </S.ButtonText>
             </S.DownloadButton>
             
