@@ -16,7 +16,7 @@ const Banner = dynamic(() => import('./components/Banner'), {
 // 나머지 컴포넌트는 지연 로딩
 const Main = dynamic(() => import('./components/Main'), { 
   ssr: false,
-  loading: () => <div style={{ minHeight: '400px', background: '#f8f9fa' }}></div>
+  loading: () => <div style={{ minHeight: '52px', background: '#f8f9fa' }}></div>
 });
 const Schedule = dynamic(() => import('./components/Schedule'), { 
   ssr: false,
@@ -105,9 +105,9 @@ const MainPage = memo(function MainPage() {
         </LazyLoadSection>
         
         {/* 중요 콘텐츠는 두 번째 우선순위 */}
-        {/* <LazyLoadSection id="main-section" priority={true}>
+        <LazyLoadSection id="main-section" priority={true}>
           <Main />
-        </LazyLoadSection> */}
+        </LazyLoadSection>
         
         {/* 나머지 컴포넌트는 스크롤 시 로드 */}
         {/* <LazyLoadSection id="schedule-section">

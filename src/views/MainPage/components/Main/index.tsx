@@ -36,10 +36,10 @@ export default function Main({}: BannerProps) {
         <S.ContentWrapper>
           <S.Content>
             <Box />
-            <Label />
+            {/* <Label />
             <Day1 onToggle={handleDay1Toggle} />
             <Day2 onToggle={handleDay2Toggle} />
-            <Day3 onToggle={handleDay3Toggle} />
+            <Day3 onToggle={handleDay3Toggle} /> */}
           </S.Content>
         </S.ContentWrapper>
       </S.Container>

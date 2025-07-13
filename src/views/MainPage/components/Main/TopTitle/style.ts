@@ -4,8 +4,6 @@ import LocationIcon from "@src/assets/icons/ic_location.svg";
 
 export const BoxWrapper = styled.div`
   position: relative;
-  width: 211px;
-  height: 37px;
   
   @media (min-width: 58.75rem) {
     width: 100%;
@@ -14,9 +12,8 @@ export const BoxWrapper = styled.div`
 `;
 
 export const Group = styled.div`
-  width: 211px;
-  height: 37px;
   display: flex;
+  padding-top: 7.5px;
   align-items: center;
   
   @media (min-width: 58.75rem) {
@@ -35,7 +32,7 @@ export const DateWrapper = styled.div`
 export const DateText = styled.div`
   font-size: 17px;
   font-weight: 600;
-  color: #000000;
+  color: #FFFFFF;
   white-space: nowrap;
   line-height: 37px;
 `;
@@ -44,6 +41,7 @@ export const Date = styled(DateIcon)`
   width: 16px;
   height: 16px;
   flex-shrink: 0;
+  fill: #fff;
 `;
 
 export const GroupWrapper = styled.div`
@@ -57,12 +55,13 @@ export const Location = styled(LocationIcon)`
   width: 16px;
   height: 16px;
   flex-shrink: 0;
+  fill: #fff;
 `;
 
 export const Text = styled.div`
   font-size: 17px;
   font-weight: 600;
-  color: #000000;
+  color: #FFFFFF;
   white-space: nowrap;
   line-height: 37px;
 `;

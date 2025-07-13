@@ -16,11 +16,11 @@ export const Box = () => {
       <Group>
         <DateWrapper>
           <Date />
-          <DateText>2025.5.16-18</DateText>
+          <DateText>주일 오후 2시</DateText>
         </DateWrapper>
         <GroupWrapper>
           <Location />
-          <Text>소망수양관</Text>
+          <Text>양재온누리교회 기쁨홀</Text>
         </GroupWrapper>
       </Group>
     </BoxWrapper>
