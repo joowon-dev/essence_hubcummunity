@@ -39,7 +39,7 @@ export default function ContentBanner({}: BannerProps) {
               </S.Button>
             </S.ButtonContainer>
 
-            <BottomContent />
+            {/* <BottomContent /> */}
           </S.Content>
         </S.ContentWrapper>
       </S.Container>
