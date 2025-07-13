@@ -27,14 +27,14 @@ export default function ContentBanner({}: BannerProps) {
             <S.ButtonContainer1>
               <S.Button onClick={openYouTube}>
                 <S.ButtonText>
-                홍보영상 보러가기 →
+                허브영상 보러가기 →
                 </S.ButtonText>
               </S.Button>
             </S.ButtonContainer1>
             <S.ButtonContainer>
               <S.Button onClick={openInstagram}>
                 <S.ButtonText>
-                허브업 콘텐츠 보러가기 →
+                허브 콘텐츠 보러가기 →
                 </S.ButtonText>
               </S.Button>
             </S.ButtonContainer>

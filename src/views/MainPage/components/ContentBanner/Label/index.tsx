@@ -5,11 +5,11 @@ export const Label = () => {
   return (
     <LabelWrapper>
       <LabelText>
-        5월 16일,
+        허브공동체의
         <br />
-        소망수양관에서
+        더 많은 소식을
         <br />
-        만나요!
+        받아보세요
       </LabelText>
     </LabelWrapper>
   );

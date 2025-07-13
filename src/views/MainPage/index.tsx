@@ -105,30 +105,32 @@ const MainPage = memo(function MainPage() {
         </LazyLoadSection>
         
         {/* 중요 콘텐츠는 두 번째 우선순위 */}
-        <LazyLoadSection id="main-section" priority={true}>
+        {/* <LazyLoadSection id="main-section" priority={true}>
           <Main />
-        </LazyLoadSection>
+        </LazyLoadSection> */}
         
         {/* 나머지 컴포넌트는 스크롤 시 로드 */}
-        <LazyLoadSection id="schedule-section">
+        {/* <LazyLoadSection id="schedule-section">
           <Schedule />
-        </LazyLoadSection>
+        </LazyLoadSection> */}
         
-        <LazyLoadSection id="tshirts-section">
+        {/* <LazyLoadSection id="tshirts-section">
           <TshirtsBanner />
-        </LazyLoadSection>
+        </LazyLoadSection> */}
         
-        <LazyLoadSection id="faq-section">
+        {/* <LazyLoadSection id="faq-section">
           <Faq />
+        </LazyLoadSection> */}
+
+<LazyLoadSection id="wallpaper-section">
+          <WallpaperDownload />
         </LazyLoadSection>
         
         <LazyLoadSection id="content-section">
           <ContentBanner />
         </LazyLoadSection>
         
-        <LazyLoadSection id="wallpaper-section">
-          <WallpaperDownload />
-        </LazyLoadSection>
+
       </PageLayout>
     </>
   );

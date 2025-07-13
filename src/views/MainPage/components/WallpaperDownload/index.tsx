@@ -6,68 +6,36 @@ import axios from 'axios';
 const wallpapers = [
   {
     id: 1,
-    title: "Essence",
-    subtitle: "",
-    verse: "복음은, 우리 주 예수 그리스도이십니다. (롬 1:2-4)",
-    thumbnail: "/images/wallpapers/thumbnail/essence.jpg",
-    mobile: "/images/wallpapers/essence.jpeg",
+    title: "1",
+    subtitle: "1",
+    verse: "1",
+    thumbnail: "/images/wallpapers/thumbnail/1.png",
+    mobile: "/images/wallpapers/1.png",
   },
   {
     id: 2,
-    title: "The Five Solas",
-    subtitle: "",
-    verse: "오직 그리스도, 오직 믿음, 오직 은혜, 오직 성경, 오직 하나님께만 영광",
-    thumbnail: "/images/wallpapers/thumbnail/02.jpg",
-    mobile: "/images/wallpapers/The Five Solas.jpeg",
+    title: "2",
+    subtitle: "2",
+    verse: "2",
+    thumbnail: "/images/wallpapers/thumbnail/2.png",
+    mobile: "/images/wallpapers/2.png",
   },
   {
     id: 3,
-    title: "Five Solas",
-    subtitle: "",
-    verse: "본질로 무장하라",
-    thumbnail: "/images/wallpapers/thumbnail/03.jpg",
-    mobile: "/images/wallpapers/Five Solas.jpeg",
+    title: "3",
+    subtitle: "3",
+    verse: "3",
+    thumbnail: "/images/wallpapers/thumbnail/3.png",
+    mobile: "/images/wallpapers/3.png",
   },
   {
     id: 4,
-    title: "Solus Christus",
-    subtitle: "오직 그리스도",
-    verse: "[행4:12] 예수 외에 다른 어느 누구에게서도 구원을 받을 수 없습니다. 하나님께서는 하늘 아래 우리가 구원받을 만한 다른 이름을 우리에게 주신 일이 없기 때문입니다.",
-    thumbnail: "/images/wallpapers/thumbnail/04.jpg",
-    mobile: "/images/wallpapers/Solus Christus.jpeg",
+    title: "4",
+    subtitle: "4",
+    verse: "4",
+    thumbnail: "/images/wallpapers/thumbnail/4.png",
+    mobile: "/images/wallpapers/4.png",
   },
-  {
-    id: 5,
-    title: "Sola Scriptura",
-    subtitle: "오직 성경",
-    verse: "[딤후3:16] 모든 성경은 하나님의 감동으로 된 것으로 교훈과 책망과 바르게 함과 의로 교육하기에 유익하니",
-    thumbnail: "/images/wallpapers/thumbnail/05.jpg",
-    mobile: "/images/wallpapers/Sola Scriptura.jpeg",
-  },
-  {
-    id: 6,
-    title: "Sola Fide",
-    subtitle: "오직 믿음",
-    verse: "[롬1:17] 복음에는 하나님의 의가 나타나서 믿음으로 믿음에 이르게 하나니 기록된 바 오직 의인은 믿음으로 말미암아 살리라",
-    thumbnail: "/images/wallpapers/thumbnail/06.jpg",
-    mobile: "/images/wallpapers/Sola Fide.jpeg",
-  },
-  {
-    id: 7,
-    title: "Sola Gratia",
-    subtitle: "오직 은혜",
-    verse: "[엡2:8] 너희는 그 은혜에 의하여 믿음으로 말미암아 구원을 받았으니 이것은 너희에게서 난 것이 아니요 하나님의 선물이라",
-    thumbnail: "/images/wallpapers/thumbnail/07.jpg",
-    mobile: "/images/wallpapers/Sola Gratia.jpeg",
-  },
-  {
-    id: 8,
-    title: "Soli Deo Gloria",
-    subtitle: "오직 하나님께만 영광",
-    verse: "[롬11:36] 이는 만물이 주에게서 나오고 주로 말미암고 주에게로 돌아감이라 그에게 영광이 세세에 있을지어다 아멘",
-    thumbnail: "/images/wallpapers/thumbnail/08.jpg",
-    mobile: "/images/wallpapers/Soli Deo Gloria.jpeg",
-  }
 ];
 
 export default function WallpaperDownload() {
@@ -195,12 +163,12 @@ export default function WallpaperDownload() {
       <S.ContentWrapper>
         <S.Content>
           <S.TitleSection>
-            <S.EssenceTag>Essence</S.EssenceTag>
+            <S.EssenceTag>D to V</S.EssenceTag>
             <S.Title>배경화면 다운로드</S.Title>
-            <S.Subtitle>복음은, 우리 주 예수 그리스도이십니다. (롬 1:2-4)</S.Subtitle>
+            {/* <S.Subtitle>복음은, 우리 주 예수 그리스도이십니다. (롬 1:2-4)</S.Subtitle>
             <S.SolasIntro>
               The Five Solas
-            </S.SolasIntro>
+            </S.SolasIntro> */}
 
           </S.TitleSection>
           
@@ -226,19 +194,19 @@ export default function WallpaperDownload() {
                 }}
               >
                 <S.WallpaperImage src={wallpaper.thumbnail} alt={wallpaper.title} />
-                <S.WallpaperTitle>{wallpaper.title}</S.WallpaperTitle>
-                <S.WallpaperSubtitle>{wallpaper.subtitle}</S.WallpaperSubtitle>
+                {/* <S.WallpaperTitle>{wallpaper.title}</S.WallpaperTitle>
+                <S.WallpaperSubtitle>{wallpaper.subtitle}</S.WallpaperSubtitle> */}
               </S.WallpaperItem>
             ))}
           </S.WallpaperGrid>
           
-          {selectedWallpaper !== null && showVerse && (
+          {/* {selectedWallpaper !== null && showVerse && (
             <S.VerseContainer>
               <S.Verse>
                 {wallpapers.find(w => w.id === selectedWallpaper)?.verse}
               </S.Verse>
             </S.VerseContainer>
-          )}
+          )} */}
           
           <S.DownloadSection>
             <S.DownloadButton 

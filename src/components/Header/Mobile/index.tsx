@@ -28,14 +28,14 @@ function MobileHeader({ onMenuStateChange }: MobileHeaderProps) {
   return (
     <>
       <StyledHeader isMenuShown={isMenuShown === "open"}>
-        <ToggleButton onClick={handleHeaderToggleButton}>
+        {/* <ToggleButton onClick={handleHeaderToggleButton}>
           {isMenuShown === "open" ? (
             <XButton width="30px" height="30px" />
           ) : (
             <MenuBar width="18px" height="14px" />
           )}
-        </ToggleButton>
-        <RecruitButton />
+        </ToggleButton> */}
+        {/* <RecruitButton /> */}
       </StyledHeader>
       <Condition statement={isMenuShown === "open"}>
         <HeaderMenu

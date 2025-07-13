@@ -26,8 +26,8 @@ export function Header() {
 
     const handleScroll = () => {
       const scrollY = window.scrollY;
-      const start = window.innerWidth * (520 / 360)*0.8;
-      const end = window.innerWidth * (520 / 360)-60;
+      const start = window.innerWidth * (233 / 360)*0.8;
+      const end = window.innerWidth * (233 / 360)-60;
 
       if (scrollY <= start) {
         setOpacity(0);
@@ -73,8 +73,8 @@ export function Header() {
   );
 }
 export const Logo = styled.button<{ opacity: number }>`
-  width: 112px;
-  height: 20px;
+  width: 168.03px;
+  height: 14.69px;
   margin-left: 20px;
   background: url(${imgLogoHub.src}) center no-repeat;
   background-size: 100% 100%;
