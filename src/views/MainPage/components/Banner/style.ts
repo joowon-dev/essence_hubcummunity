@@ -14,7 +14,7 @@ export const Container = styled.section`
   position: relative;
 
   @media (min-width: 58.75rem) {
-    height: 830px;
+    height: 388px;
     width: 100%;
     max-width: 600px;
     background-size: cover;
