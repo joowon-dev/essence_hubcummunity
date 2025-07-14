@@ -265,14 +265,14 @@ export default function WallpaperDownload() {
               </S.ButtonText>
             </S.DownloadButton>
             {/* 일괄 다운로드 버튼 추가 */}
-            <S.DownloadButton 
+            {/* <S.DownloadButton 
               onClick={handleBulkDownload}
               disabled={isDownloading || isBulkDownloading || remainingDownloads === 0}
             >
               <S.ButtonText $isDisabled={isDownloading || isBulkDownloading || remainingDownloads === 0}>
                 {isBulkDownloading ? '일괄 다운로드 중...' : '일괄 다운로드'}
               </S.ButtonText>
-            </S.DownloadButton>
+            </S.DownloadButton> */}
             
             {downloadError && (
               <S.ErrorMessage>
